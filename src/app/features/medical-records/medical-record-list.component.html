@@ -1,0 +1,263 @@
+<div class="medical-record-page">
+  <!-- PAGE HEADER -->
+  <div class="page-header dental-card">
+    <div class="header-titles">
+      <h2>
+        <span nz-icon nzType="solution" class="text-ocean"></span>
+        @if (userRole() === 'PATIENT') {
+          Hồ Sơ Bệnh Án & Lịch Sử Điều Trị Cá Nhân
+        } @else {
+          Quản Lý Hồ Sơ Bệnh Án Lâm Sàng Toàn Viện
+        }
+      </h2>
+      <p class="subtitle">Tra cứu chẩn đoán của bác sĩ, dịch vụ thực hiện, lịch sử điều trị và phác đồ theo dõi liên quan</p>
+    </div>
+
+    <div class="header-actions">
+      @if (isDoctorOrAdmin()) {
+        <nz-input-group nzPrefixIcon="search" class="search-input">
+          <input
+            type="text"
+            nz-input
+            placeholder="Tìm theo chẩn đoán, tên bệnh nhân..."
+            [ngModel]="searchKeyword()"
+            (ngModelChange)="onSearch($event)"
+          />
+        </nz-input-group>
+
+        <button nz-button nzType="primary" (click)="openCreateModal()" class="btn-create">
+          <span nz-icon nzType="plus"></span>
+          <span>Tạo bệnh án mới</span>
+        </button>
+      }
+
+      <button nz-button nzType="default" (click)="loadRecords()" [nzLoading]="isLoading()" title="Làm mới">
+        <span nz-icon nzType="reload"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MEDICAL RECORDS TABLE -->
+  <div class="dental-card table-card">
+    <nz-table
+      #recordTable
+      [nzData]="records()"
+      [nzLoading]="isLoading()"
+      [nzFrontPagination]="false"
+      [nzTotal]="totalElements()"
+      [nzPageIndex]="pageIndex()"
+      [nzPageSize]="pageSize()"
+      (nzPageIndexChange)="onPageChange($event)"
+      (nzPageSizeChange)="onPageSizeChange($event)"
+      [nzShowSizeChanger]="true"
+      [nzPageSizeOptions]="[5, 10, 20]"
+      class="dental-table"
+    >
+      <thead>
+        <tr>
+          <th nzWidth="80px">Mã BA</th>
+          <th>Bệnh nhân</th>
+          <th>Bác sĩ chẩn đoán</th>
+          <th>Dịch vụ điều trị</th>
+          <th>Chẩn đoán lâm sàng</th>
+          <th>Phác đồ liên kết</th>
+          <th>Ngày khám</th>
+          <th nzWidth="120px" nzAlign="center">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of recordTable.data; track item.id) {
+          <tr>
+            <td><strong class="text-ocean">#{{ item.id }}</strong></td>
+            <td>
+              <div class="patient-cell">
+                <span class="patient-name">{{ item.user?.fullname || 'Bệnh nhân #' + item.userId }}</span>
+                <span class="patient-phone">{{ item.user?.phone }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="doctor-cell">
+                <span class="doctor-name">{{ item.doctor?.user?.fullname || 'BS #' + item.doctorId }}</span>
+                <span class="doctor-spec">{{ item.doctor?.specialization }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="service-tag">{{ item.service?.name }}</span>
+            </td>
+            <td>
+              <span class="diagnosis-text" [title]="item.diagnosis">
+                {{ item.diagnosis }}
+              </span>
+            </td>
+            <td>
+              @if (item.treatmentRoute) {
+                <nz-tag nzColor="cyan">{{ item.treatmentRoute.title }}</nz-tag>
+              } @else {
+                <span class="text-muted">Không có</span>
+              }
+            </td>
+            <td>
+              <span class="date-text">{{ item.createdAt }}</span>
+            </td>
+            <td nzAlign="center">
+              <div class="action-buttons">
+                <button
+                  nz-button
+                  nzType="text"
+                  nzSize="small"
+                  class="btn-view"
+                  (click)="viewDetail(item)"
+                  nz-tooltip
+                  nzTooltipTitle="Xem chi tiết bệnh án"
+                >
+                  <span nz-icon nzType="eye"></span>
+                </button>
+
+                @if (userRole() === 'ADMIN') {
+                  <button
+                    nz-button
+                    nzType="text"
+                    nzDanger
+                    nzSize="small"
+                    nz-popconfirm
+                    nzPopconfirmTitle="Bạn có chắc muốn xóa hồ sơ bệnh án này?"
+                    (nzOnConfirm)="deleteRecord(item.id)"
+                    nz-tooltip
+                    nzTooltipTitle="Xóa bệnh án"
+                  >
+                    <span nz-icon nzType="delete"></span>
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="8" class="text-center py-8 text-muted">
+              Không có hồ sơ bệnh án nào.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </nz-table>
+  </div>
+</div>
+
+<!-- ======================================================================== -->
+<!-- MODAL: CREATE MEDICAL RECORD                                             -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isCreateModalVisible()"
+  nzTitle="Khởi Tạo Hồ Sơ Bệnh Án Khám Chữa Bệnh Mới"
+  (nzOnCancel)="isCreateModalVisible.set(false)"
+  (nzOnOk)="submitCreate()"
+  nzOkText="Lưu bệnh án"
+  nzCancelText="Hủy"
+  [nzWidth]="640"
+>
+  <ng-container *nzModalContent>
+    <form [formGroup]="recordForm" nz-form nzLayout="vertical">
+      <div class="grid-2-cols">
+        <nz-form-item>
+          <nz-form-label nzRequired>Bệnh nhân</nz-form-label>
+          <nz-form-control nzErrorTip="Vui lòng chọn bệnh nhân!">
+            <nz-select formControlName="userId" nzPlaceHolder="Chọn bệnh nhân thăm khám">
+              @for (p of patients(); track p.id) {
+                <nz-option [nzValue]="p.id" [nzLabel]="p.fullname + ' (' + p.phone + ')'"></nz-option>
+              }
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label nzRequired>Bác sĩ chẩn đoán</nz-form-label>
+          <nz-form-control nzErrorTip="Vui lòng chọn bác sĩ!">
+            <nz-select formControlName="doctorId" nzPlaceHolder="Chọn bác sĩ phụ trách">
+              @for (d of doctors(); track d.id) {
+                <nz-option [nzValue]="d.id" [nzLabel]="(d.user?.fullname || 'BS') + ' - ' + d.specialization"></nz-option>
+              }
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="grid-2-cols">
+        <nz-form-item>
+          <nz-form-label nzRequired>Dịch vụ thực hiện</nz-form-label>
+          <nz-form-control nzErrorTip="Vui lòng chọn dịch vụ!">
+            <nz-select formControlName="serviceId" nzPlaceHolder="Chọn dịch vụ y tế">
+              @for (s of services(); track s.id) {
+                <nz-option [nzValue]="s.id" [nzLabel]="s.name + ' (' + (s.price | number) + ' đ)'"></nz-option>
+              }
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label>Phác đồ điều trị liên kết (tùy chọn)</nz-form-label>
+          <nz-form-control>
+            <nz-select formControlName="treatmentRouteId" nzPlaceHolder="Chọn phác đồ" nzAllowClear>
+              @for (r of routes(); track r.id) {
+                <nz-option [nzValue]="r.id" [nzLabel]="r.title"></nz-option>
+              }
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <nz-form-item>
+        <nz-form-label nzRequired>Kết luận chẩn đoán & Chỉ định điều trị</nz-form-label>
+        <nz-form-control nzErrorTip="Vui lòng nhập chẩn đoán lâm sàng chi tiết!">
+          <textarea
+            nz-input
+            formControlName="diagnosis"
+            rows="4"
+            placeholder="Mô tả tình trạng răng, số răng sâu/mất, kết quả chụp X-quang, phương án điều trị..."
+          ></textarea>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </ng-container>
+</nz-modal>
+
+<!-- ======================================================================== -->
+<!-- MODAL: VIEW MEDICAL RECORD DETAIL                                        -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isDetailModalVisible()"
+  nzTitle="Chi Tiết Hồ Sơ Bệnh Án"
+  (nzOnCancel)="isDetailModalVisible.set(false)"
+  [nzFooter]="null"
+  [nzWidth]="580"
+>
+  <ng-container *nzModalContent>
+    @if (selectedRecord()) {
+      <div class="record-detail-view">
+        <div class="detail-section">
+          <h4>Thông tin bệnh nhân</h4>
+          <p><strong>Họ tên:</strong> {{ selectedRecord()?.user?.fullname }}</p>
+          <p><strong>Số điện thoại:</strong> {{ selectedRecord()?.user?.phone }}</p>
+          <p><strong>Địa chỉ:</strong> {{ selectedRecord()?.user?.address || '—' }}</p>
+        </div>
+
+        <div class="detail-section">
+          <h4>Thông tin điều trị</h4>
+          <p><strong>Bác sĩ:</strong> {{ selectedRecord()?.doctor?.user?.fullname }} ({{ selectedRecord()?.doctor?.specialization }})</p>
+          <p><strong>Dịch vụ:</strong> {{ selectedRecord()?.service?.name }}</p>
+          <p><strong>Ngày thực hiện:</strong> {{ selectedRecord()?.createdAt }}</p>
+          @if (selectedRecord()?.treatmentRoute) {
+            <p><strong>Phác đồ:</strong> {{ selectedRecord()?.treatmentRoute?.title }}</p>
+          }
+        </div>
+
+        <div class="detail-section detail-section--diagnosis">
+          <h4>Chẩn đoán & Kết luận của bác sĩ</h4>
+          <div class="diagnosis-box">
+            {{ selectedRecord()?.diagnosis }}
+          </div>
+        </div>
+      </div>
+    }
+  </ng-container>
+</nz-modal>
+

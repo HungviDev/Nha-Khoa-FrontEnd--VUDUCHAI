@@ -1,0 +1,314 @@
+// ==============================================================================
+// GLOBAL STYLES & OCEAN DENTAL THEME CONFIGURATION
+// ==============================================================================
+
+@use './styles/variables' as *;
+
+// Ng-Zorro Ant Design theme integration
+@import 'ng-zorro-antd/ng-zorro-antd.min.css';
+
+// Base CSS Reset & Layout
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: $font-family-base;
+  color: $text-primary;
+  background-color: $bg-body;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: $primary-color;
+  text-decoration: none;
+  transition: $transition-base;
+
+  &:hover {
+    color: $primary-light;
+  }
+}
+
+// ==============================================================================
+// OCEAN DENTAL COMPONENT STYLING
+// ==============================================================================
+
+// Card & Panel Styling
+.dental-card {
+  background: $bg-card;
+  border-radius: $border-radius-base;
+  border: 1px solid $border-color-base;
+  box-shadow: $shadow-card;
+  transition: $transition-base;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    box-shadow: $shadow-card-hover;
+    border-color: $primary-lighter;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid $border-color-light;
+
+    h3, h4 {
+      margin: 0;
+      color: $text-primary;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      i, nz-icon {
+        color: $primary-color;
+      }
+    }
+  }
+}
+
+// Ocean Dental Button Styles
+.ant-btn-primary {
+  background-color: $primary-color !important;
+  border-color: $primary-color !important;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25) !important;
+  border-radius: $border-radius-sm !important;
+  font-weight: 500 !important;
+  transition: $transition-base !important;
+
+  &:hover, &:focus {
+    background-color: $secondary-color !important;
+    border-color: $secondary-color !important;
+    box-shadow: 0 6px 16px rgba(14, 165, 233, 0.35) !important;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    background-color: $primary-dark !important;
+    border-color: $primary-dark !important;
+    transform: translateY(0);
+  }
+}
+
+.ant-btn-default {
+  border-color: $border-color-base !important;
+  color: $text-secondary !important;
+  border-radius: $border-radius-sm !important;
+  transition: $transition-base !important;
+
+  &:hover {
+    color: $primary-color !important;
+    border-color: $primary-color !important;
+    background-color: $primary-50 !important;
+  }
+}
+
+.ant-btn-danger {
+  background-color: $status-danger !important;
+  border-color: $status-danger !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25) !important;
+
+  &:hover {
+    background-color: #dc2626 !important;
+    border-color: #dc2626 !important;
+  }
+}
+
+// Table Styling (Clinical & Crisp)
+.dental-table, .ant-table {
+  border-radius: $border-radius-base;
+  overflow: hidden;
+
+  .ant-table-thead > tr > th {
+    background-color: $bg-light !important;
+    color: $primary-darker !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    border-bottom: 2px solid $primary-lighter !important;
+    padding: 14px 16px !important;
+  }
+
+  .ant-table-tbody > tr {
+    transition: $transition-base;
+
+    > td {
+      border-bottom: 1px solid $border-color-light !important;
+      padding: 16px !important;
+      color: $text-secondary;
+      font-size: 14px;
+    }
+
+    &:hover > td {
+      background-color: #f8fbff !important;
+    }
+  }
+
+  .ant-pagination {
+    margin-top: 20px !important;
+
+    .ant-pagination-item-active {
+      border-color: $primary-color !important;
+      background-color: $primary-color !important;
+
+      a {
+        color: #ffffff !important;
+      }
+    }
+  }
+}
+
+// Status Badges (Ocean Dental Palette)
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1.4;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  // Success: CONFIRMED, COMPLETED, SUCCESS
+  &--confirmed, &--completed, &--success {
+    background-color: $status-success-bg;
+    color: $status-success;
+    border: 1px solid $status-success-border;
+
+    &::before {
+      background-color: $status-success;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+  }
+
+  // Warning: PENDING, IN_PROGRESS
+  &--pending, &--in-progress {
+    background-color: $status-warning-bg;
+    color: $status-warning;
+    border: 1px solid $status-warning-border;
+
+    &::before {
+      background-color: $status-warning;
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+    }
+  }
+
+  // Danger: CANCELLED, FAILED
+  &--cancelled, &--failed {
+    background-color: $status-danger-bg;
+    color: $status-danger;
+    border: 1px solid $status-danger-border;
+
+    &::before {
+      background-color: $status-danger;
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+    }
+  }
+
+  // Neutral: REFUNDED, ARCHIVED
+  &--refunded, &--neutral {
+    background-color: $status-neutral-bg;
+    color: $status-neutral;
+    border: 1px solid $status-neutral-border;
+
+    &::before {
+      background-color: $status-neutral;
+    }
+  }
+}
+
+// Form Inputs & Selects
+.ant-input, .ant-input-number, .ant-select-selector, .ant-picker {
+  border-radius: $border-radius-sm !important;
+  border-color: $border-color-base !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  transition: $transition-base !important;
+
+  &:hover {
+    border-color: $primary-light !important;
+  }
+
+  &:focus, &.ant-input-focused, &.ant-select-focused .ant-select-selector {
+    border-color: $primary-color !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+  }
+}
+
+// Modal Styling
+.ant-modal-content {
+  border-radius: $border-radius-lg !important;
+  overflow: hidden;
+  box-shadow: $shadow-modal !important;
+  border: 1px solid $primary-lighter !important;
+
+  .ant-modal-header {
+    background-color: $bg-light !important;
+    padding: 18px 24px !important;
+    border-bottom: 1px solid $primary-lighter !important;
+
+    .ant-modal-title {
+      color: $primary-darker !important;
+      font-weight: 600 !important;
+      font-size: 16px !important;
+    }
+  }
+
+  .ant-modal-body {
+    padding: 24px !important;
+  }
+
+  .ant-modal-footer {
+    padding: 16px 24px !important;
+    border-top: 1px solid $border-color-light !important;
+    background-color: #fafbfc;
+  }
+}
+
+// Step & Timeline Styling (Clinical Medical Progression)
+.ant-steps-item-process > .ant-steps-item-container > .ant-steps-item-icon {
+  background-color: $primary-color !important;
+  border-color: $primary-color !important;
+}
+
+.ant-steps-item-finish > .ant-steps-item-container > .ant-steps-item-icon {
+  border-color: $status-success !important;
+
+  > .ant-steps-icon {
+    color: $status-success !important;
+  }
+}
+
+.ant-steps-item-finish .ant-steps-item-tail::after {
+  background-color: $status-success !important;
+}
+
+// Utility Classes
+.text-ocean { color: $primary-color !important; }
+.text-sky { color: $secondary-color !important; }
+.text-success { color: $status-success !important; }
+.text-warning { color: $status-warning !important; }
+.text-danger { color: $status-danger !important; }
+.bg-ocean-light { background-color: $bg-light !important; }
+.shadow-ocean { box-shadow: $shadow-card !important; }
+

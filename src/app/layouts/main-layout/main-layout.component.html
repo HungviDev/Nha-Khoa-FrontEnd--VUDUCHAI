@@ -1,0 +1,143 @@
+<nz-layout class="layout-wrapper">
+  <!-- SIDEBAR NAVIGATION -->
+  <nz-sider
+    class="sidebar"
+    nzCollapsible
+    [(nzCollapsed)]="isCollapsed"
+    [nzTrigger]="null"
+    [nzWidth]="260"
+    [nzCollapsedWidth]="80"
+  >
+    <!-- Brand / Clinic Header -->
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <span nz-icon nzType="medicine-box" nzTheme="outline"></span>
+      </div>
+      @if (!isCollapsed()) {
+        <div class="logo-text">
+          <span class="logo-title">OCEAN DENTAL</span>
+          <span class="logo-subtitle">Hệ Thống Nha Khoa</span>
+        </div>
+      }
+    </div>
+
+    <!-- Dynamic Menu based on userRole() -->
+    <ul nz-menu nzMode="inline" class="sidebar-menu">
+      @for (item of menuItems(); track item.title) {
+        @if (item.children && item.children.length > 0) {
+          <!-- Submenu with child items -->
+          <li nz-submenu [nzTitle]="item.title" [nzIcon]="item.icon">
+            <ul>
+              @for (child of item.children; track child.title) {
+                <li nz-menu-item nzMatchRouter>
+                  <a [routerLink]="child.route">
+                    <span nz-icon [nzType]="child.icon"></span>
+                    <span>{{ child.title }}</span>
+                  </a>
+                </li>
+              }
+            </ul>
+          </li>
+        } @else {
+          <!-- Single Menu Item -->
+          <li nz-menu-item nzMatchRouter>
+            <a [routerLink]="item.route">
+              <span nz-icon [nzType]="item.icon"></span>
+              <span>{{ item.title }}</span>
+            </a>
+          </li>
+        }
+      }
+    </ul>
+  </nz-sider>
+
+  <!-- MAIN CONTAINER -->
+  <nz-layout class="main-container">
+    <!-- TOPBAR / HEADER -->
+    <nz-header class="topbar">
+      <div class="topbar-left">
+        <button
+          nz-button
+          nzType="text"
+          class="collapse-trigger"
+          (click)="toggleCollapsed()"
+          [title]="isCollapsed() ? 'Mở rộng sidebar' : 'Thu gọn sidebar'"
+        >
+          <span nz-icon [nzType]="isCollapsed() ? 'menu-unfold' : 'menu-fold'"></span>
+        </button>
+
+        <nz-breadcrumb class="breadcrumb-nav">
+          <nz-breadcrumb-item>
+            <span nz-icon nzType="home"></span>
+          </nz-breadcrumb-item>
+          <nz-breadcrumb-item>Hệ thống Quản lý Nha khoa</nz-breadcrumb-item>
+          <nz-breadcrumb-item>{{ roleLabel() }}</nz-breadcrumb-item>
+        </nz-breadcrumb>
+      </div>
+
+      <!-- Topbar Right: User Information & Actions -->
+      <div class="topbar-right">
+        <!-- User Profile Dropdown -->
+        <div
+          class="user-profile-badge"
+          nz-dropdown
+          [nzDropdownMenu]="userMenu"
+          nzPlacement="bottomRight"
+          nzTrigger="click"
+        >
+          <nz-avatar
+            [nzSrc]="currentUser()?.avatar || ''"
+            [nzText]="(currentUser()?.fullname || 'U').charAt(0)"
+            class="user-avatar"
+          ></nz-avatar>
+
+          <div class="user-meta">
+            <span class="user-name">{{ currentUser()?.fullname || 'Người dùng' }}</span>
+            <nz-tag [nzColor]="roleBadgeColor()" class="user-role-tag">
+              {{ roleLabel() }}
+            </nz-tag>
+          </div>
+
+          <span nz-icon nzType="down" class="dropdown-arrow"></span>
+        </div>
+
+        <!-- Dropdown Menu -->
+        <nz-dropdown-menu #userMenu="nzDropdownMenu">
+          <ul nz-menu class="user-dropdown-menu">
+            <li class="user-info-header">
+              <strong>{{ currentUser()?.fullname }}</strong>
+              <small>{{ currentUser()?.email }}</small>
+            </li>
+            <li nz-menu-divider></li>
+            <li nz-menu-item (click)="navigateToProfile()">
+              <span nz-icon nzType="user"></span>
+              <span>Thông tin tài khoản</span>
+            </li>
+            <li nz-menu-item (click)="navigateToProfile()">
+              <span nz-icon nzType="lock"></span>
+              <span>Đổi mật khẩu</span>
+            </li>
+            <li nz-menu-divider></li>
+            <li nz-menu-item nzDanger (click)="logout()">
+              <span nz-icon nzType="logout"></span>
+              <span>Đăng xuất</span>
+            </li>
+          </ul>
+        </nz-dropdown-menu>
+      </div>
+    </nz-header>
+
+    <!-- CONTENT WORKSPACE -->
+    <nz-content class="content-body">
+      <div class="content-wrapper">
+        <router-outlet></router-outlet>
+      </div>
+    </nz-content>
+
+    <!-- FOOTER -->
+    <nz-footer class="app-footer">
+      <span>© 2026 Ocean Dental Clinic Management System. All rights reserved. Tiêu chuẩn Y tế Hiện đại & Tin cậy.</span>
+    </nz-footer>
+  </nz-layout>
+</nz-layout>
+

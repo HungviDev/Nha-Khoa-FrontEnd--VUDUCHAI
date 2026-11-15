@@ -1,0 +1,266 @@
+// ==============================================================================
+// MAIN LAYOUT SCSS - OCEAN DENTAL STYLING
+// ==============================================================================
+
+@use '../../../styles/variables' as *;
+
+.layout-wrapper {
+  min-height: 100vh;
+}
+
+// ------------------------------------------------------------------------------
+// SIDEBAR STYLING
+// ------------------------------------------------------------------------------
+.sidebar {
+  background: $bg-sidebar;
+  border-right: 1px solid $border-color-base;
+  box-shadow: 2px 0 12px rgba(2, 132, 199, 0.04);
+  z-index: 10;
+  transition: $transition-base;
+
+  .sidebar-logo {
+    height: 64px;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, $primary-50 0%, #ffffff 100%);
+    border-bottom: 1px solid $border-color-light;
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 20px;
+      box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3);
+    }
+
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+
+      .logo-title {
+        font-weight: 800;
+        font-size: 15px;
+        letter-spacing: 0.8px;
+        color: $primary-darker;
+        line-height: 1.2;
+      }
+
+      .logo-subtitle {
+        font-size: 11px;
+        color: $secondary-color;
+        font-weight: 500;
+        letter-spacing: 0.2px;
+      }
+    }
+  }
+
+  .sidebar-menu {
+    border-right: none;
+    padding: 12px 0;
+
+    li.ant-menu-item, li.ant-menu-submenu-title {
+      margin: 4px 12px !important;
+      border-radius: $border-radius-sm;
+      height: 44px;
+      line-height: 44px;
+      font-weight: 500;
+      color: $text-secondary;
+      transition: $transition-base;
+
+      span[nz-icon] {
+        font-size: 16px;
+      }
+
+      &:hover {
+        color: $primary-color;
+        background-color: $primary-50;
+      }
+    }
+
+    // Active state with Ocean Blue accent
+    li.ant-menu-item-selected {
+      background: linear-gradient(90deg, $primary-50 0%, rgba(240, 249, 255, 0.4) 100%) !important;
+      color: $primary-color !important;
+      font-weight: 600;
+      position: relative;
+
+      &::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 6px;
+        bottom: 6px;
+        width: 4px;
+        border-radius: 4px;
+        background-color: $primary-color;
+      }
+
+      a {
+        color: $primary-color !important;
+      }
+
+      span[nz-icon] {
+        color: $primary-color !important;
+      }
+    }
+  }
+}
+
+// ------------------------------------------------------------------------------
+// TOPBAR HEADER STYLING
+// ------------------------------------------------------------------------------
+.topbar {
+  background: $bg-header;
+  height: 64px;
+  line-height: 64px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid $border-color-base;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+  z-index: 9;
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .collapse-trigger {
+      font-size: 18px;
+      color: $text-secondary;
+      width: 40px;
+      height: 40px;
+      border-radius: $border-radius-sm;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover {
+        background-color: $primary-50;
+        color: $primary-color;
+      }
+    }
+
+    .breadcrumb-nav {
+      font-size: 13px;
+    }
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    .user-profile-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 12px;
+      border-radius: 30px;
+      border: 1px solid $border-color-base;
+      cursor: pointer;
+      transition: $transition-base;
+      background-color: #fafbfc;
+
+      &:hover {
+        background-color: $primary-50;
+        border-color: $primary-lighter;
+      }
+
+      .user-avatar {
+        background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+        color: #ffffff;
+        font-weight: 600;
+      }
+
+      .user-meta {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+
+        .user-name {
+          font-weight: 600;
+          font-size: 13px;
+          color: $text-primary;
+        }
+
+        .user-role-tag {
+          font-size: 10px;
+          padding: 0 6px;
+          border-radius: 4px;
+          margin-top: 2px;
+          width: fit-content;
+        }
+      }
+
+      .dropdown-arrow {
+        font-size: 10px;
+        color: $text-muted;
+      }
+    }
+  }
+}
+
+// User Dropdown Customization
+.user-dropdown-menu {
+  min-width: 200px;
+  padding: 8px;
+  border-radius: $border-radius-base;
+  box-shadow: $shadow-dropdown;
+
+  .user-info-header {
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+
+    strong {
+      color: $text-primary;
+      font-size: 14px;
+    }
+
+    small {
+      color: $text-muted;
+      font-size: 12px;
+    }
+  }
+}
+
+// ------------------------------------------------------------------------------
+// CONTENT AREA STYLING
+// ------------------------------------------------------------------------------
+.main-container {
+  background-color: $bg-body;
+}
+
+.content-body {
+  padding: 24px;
+  min-height: calc(100vh - 64px - 50px);
+
+  .content-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+}
+
+// ------------------------------------------------------------------------------
+// FOOTER STYLING
+// ------------------------------------------------------------------------------
+.app-footer {
+  text-align: center;
+  font-size: 12px;
+  color: $text-muted;
+  background: transparent;
+  padding: 16px 24px;
+  border-top: 1px solid $border-color-light;
+}
+

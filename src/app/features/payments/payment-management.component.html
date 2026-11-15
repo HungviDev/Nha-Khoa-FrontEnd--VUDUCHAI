@@ -1,0 +1,223 @@
+<div class="payment-management-page">
+  <!-- PAGE HEADER -->
+  <div class="page-header dental-card">
+    <div class="header-titles">
+      <h2>
+        <span nz-icon nzType="credit-card" class="text-ocean"></span>
+        @if (userRole() === 'PATIENT') {
+          Lịch Sử Hóa Đơn & Thanh Toán Cá Nhân
+        } @else {
+          Quản Lý Hóa Đơn & Đối Soát Thanh Toán Toàn Viện
+        }
+      </h2>
+      <p class="subtitle">Theo dõi các giao dịch tài chính, trạng thái hóa đơn (PENDING, SUCCESS, FAILED) và mã đối soát</p>
+    </div>
+
+    <div class="header-actions">
+      <!-- Status Filter -->
+      <nz-select
+        class="status-select"
+        [ngModel]="selectedStatusFilter()"
+        (ngModelChange)="filterByStatus($event)"
+        nzPlaceHolder="Lọc theo trạng thái"
+        nzAllowClear
+      >
+        <nz-option [nzValue]="null" nzLabel="Tất cả trạng thái"></nz-option>
+        <nz-option nzValue="PENDING" nzLabel="Chờ thanh toán (PENDING)"></nz-option>
+        <nz-option nzValue="SUCCESS" nzLabel="Thành công (SUCCESS)"></nz-option>
+        <nz-option nzValue="FAILED" nzLabel="Thất bại (FAILED)"></nz-option>
+      </nz-select>
+
+      <button nz-button nzType="primary" (click)="openCreateModal()" class="btn-create">
+        <span nz-icon nzType="plus"></span>
+        <span>Khởi tạo thanh toán</span>
+      </button>
+
+      <button nz-button nzType="default" (click)="loadPayments()" [nzLoading]="isLoading()" title="Làm mới">
+        <span nz-icon nzType="reload"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- PAYMENTS TABLE -->
+  <div class="dental-card table-card">
+    <nz-table
+      #payTable
+      [nzData]="payments()"
+      [nzLoading]="isLoading()"
+      [nzFrontPagination]="false"
+      [nzTotal]="totalElements()"
+      [nzPageIndex]="pageIndex()"
+      [nzPageSize]="pageSize()"
+      (nzPageIndexChange)="onPageChange($event)"
+      (nzPageSizeChange)="onPageSizeChange($event)"
+      [nzShowSizeChanger]="true"
+      [nzPageSizeOptions]="[5, 10, 20]"
+      class="dental-table"
+    >
+      <thead>
+        <tr>
+          <th nzWidth="80px">Mã HĐ</th>
+          <th>Bệnh nhân</th>
+          <th>Số tiền thanh toán</th>
+          <th>Phương thức</th>
+          <th>Trạng thái</th>
+          <th>Thời gian tạo</th>
+          @if (isAdmin()) {
+            <th nzWidth="150px" nzAlign="center">Đối soát</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of payTable.data; track item.id) {
+          <tr>
+            <td><strong class="text-ocean">#{{ item.id }}</strong></td>
+            <td>
+              <div class="patient-cell">
+                <span class="patient-name">{{ item.user?.fullname || 'Bệnh nhân #' + item.userId }}</span>
+                <span class="patient-sub">{{ item.user?.phone }}</span>
+              </div>
+            </td>
+            <td>
+              <strong class="payment-amount text-success">
+                {{ item.amount | number }} VNĐ
+              </strong>
+            </td>
+            <td>
+              <nz-tag nzColor="blue">{{ item.method }}</nz-tag>
+            </td>
+            <td>
+              <span class="status-badge" [ngClass]="getStatusBadgeClass(item.status)">
+                {{ item.status }}
+              </span>
+            </td>
+            <td>
+              <span class="date-text">{{ item.createdAt }}</span>
+            </td>
+            @if (isAdmin()) {
+              <td nzAlign="center">
+                @if (item.status === 'PENDING') {
+                  <button
+                    nz-button
+                    nzType="primary"
+                    nzSize="small"
+                    class="btn-confirm"
+                    (click)="openConfirmModal(item)"
+                    nz-tooltip
+                    nzTooltipTitle="Xác nhận đối soát hoàn tất thanh toán"
+                  >
+                    <span nz-icon nzType="check"></span>
+                    <span>Xác nhận</span>
+                  </button>
+                } @else {
+                  <span class="text-muted text-xs">Đã chốt</span>
+                }
+              </td>
+            }
+          </tr>
+        } @empty {
+          <tr>
+            <td [attr.colspan]="isAdmin() ? 7 : 6" class="text-center py-8 text-muted">
+              Không tìm thấy hóa đơn thanh toán nào.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </nz-table>
+  </div>
+</div>
+
+<!-- ======================================================================== -->
+<!-- MODAL: INITIATE PAYMENT (STARTS IN PENDING)                              -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isCreateModalVisible()"
+  nzTitle="Khởi Tạo Hóa Đơn Thanh Toán"
+  (nzOnCancel)="isCreateModalVisible.set(false)"
+  (nzOnOk)="submitCreate()"
+  nzOkText="Tạo hóa đơn"
+  nzCancelText="Hủy"
+  [nzWidth]="540"
+>
+  <ng-container *nzModalContent>
+    <form [formGroup]="createForm" nz-form nzLayout="vertical">
+      @if (isAdmin()) {
+        <nz-form-item>
+          <nz-form-label nzRequired>Bệnh nhân</nz-form-label>
+          <nz-form-control nzErrorTip="Vui lòng chọn bệnh nhân!">
+            <nz-select formControlName="userId" nzPlaceHolder="Chọn bệnh nhân thanh toán">
+              @for (p of patients(); track p.id) {
+                <nz-option [nzValue]="p.id" [nzLabel]="p.fullname + ' (' + p.phone + ')'"></nz-option>
+              }
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+      }
+
+      <nz-form-item>
+        <nz-form-label nzRequired>Số tiền thanh toán (VNĐ)</nz-form-label>
+        <nz-form-control nzErrorTip="Số tiền thanh toán tối thiểu 1,000 VNĐ!">
+          <nz-input-number
+            formControlName="amount"
+            [nzMin]="1000"
+            [nzStep]="500000"
+            class="w-full"
+          ></nz-input-number>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label nzRequired>Phương thức thanh toán</nz-form-label>
+        <nz-form-control nzErrorTip="Vui lòng chọn phương thức!">
+          <nz-select formControlName="method" nzPlaceHolder="Chọn hình thức thanh toán">
+            @for (m of paymentMethods; track m.value) {
+              <nz-option [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
+            }
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </ng-container>
+</nz-modal>
+
+<!-- ======================================================================== -->
+<!-- MODAL: CONFIRM PAYMENT WITH TRANSACTION REF (ADMIN ONLY)                 -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isConfirmModalVisible()"
+  nzTitle="Xác Nhận Đối Soát Giao Dịch Thanh Toán"
+  (nzOnCancel)="isConfirmModalVisible.set(false)"
+  (nzOnOk)="submitConfirm()"
+  nzOkText="Xác nhận Hoàn tất"
+  nzCancelText="Đóng"
+  [nzWidth]="520"
+>
+  <ng-container *nzModalContent>
+    <form [formGroup]="confirmForm" nz-form nzLayout="vertical">
+      <nz-form-item>
+        <nz-form-label nzRequired>Trạng thái xác nhận</nz-form-label>
+        <nz-form-control>
+          <nz-select formControlName="status">
+            <nz-option nzValue="SUCCESS" nzLabel="SUCCESS (Thanh toán thành công)"></nz-option>
+            <nz-option nzValue="FAILED" nzLabel="FAILED (Giao dịch thất bại)"></nz-option>
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label nzRequired>Mã đối soát giao dịch (Transaction Ref)</nz-form-label>
+        <nz-form-control nzErrorTip="Vui lòng nhập mã đối soát!">
+          <input nz-input formControlName="transactionRef" placeholder="Mã giao dịch ngân hàng / VNPAY / MoMo..." />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label>Ghi chú đối soát</nz-form-label>
+        <nz-form-control>
+          <textarea nz-input formControlName="note" rows="2" placeholder="Ghi chú kế toán..."></textarea>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </ng-container>
+</nz-modal>
+

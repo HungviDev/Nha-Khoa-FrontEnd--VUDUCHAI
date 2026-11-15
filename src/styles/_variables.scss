@@ -1,0 +1,72 @@
+// ==============================================================================
+// OCEAN DENTAL THEME - DESIGN SYSTEM TOKENS & SCSS VARIABLES
+// ==============================================================================
+
+// Primary Palette (Ocean Blue)
+$primary-color: #0284c7;
+$primary-light: #38bdf8;
+$primary-lighter: #bae6fd;
+$primary-dark: #0369a1;
+$primary-darker: #075985;
+$primary-50: #f0f9ff;
+$primary-100: #e0f2fe;
+
+// Secondary / Accent (Sky Cyan)
+$secondary-color: #0ea5e9;
+$accent-color: #38bdf8;
+$accent-glow: rgba(14, 165, 233, 0.25);
+
+// Semantic Status Colors
+$status-success: #10b981; // CONFIRMED, COMPLETED, SUCCESS
+$status-success-bg: #ecfdf5;
+$status-success-border: #a7f3d0;
+
+$status-warning: #f59e0b; // PENDING, IN_PROGRESS
+$status-warning-bg: #fffbeb;
+$status-warning-border: #fde68a;
+
+$status-danger: #ef4444;  // CANCELLED, FAILED
+$status-danger-bg: #fef2f2;
+$status-danger-border: #fecaca;
+
+$status-info: #0284c7;    // INFO
+$status-info-bg: #f0f9ff;
+$status-info-border: #bae6fd;
+
+$status-neutral: #64748b; // REFUNDED, ARCHIVED
+$status-neutral-bg: #f8fafc;
+$status-neutral-border: #e2e8f0;
+
+// Neutrals & Surface Colors
+$bg-body: #f8fafc;
+$bg-light: #f0f9ff;
+$bg-surface: #ffffff;
+$bg-card: #ffffff;
+$bg-sidebar: #ffffff;
+$bg-header: #ffffff;
+
+// Borders & Dividers
+$border-color-base: #e2e8f0;
+$border-color-light: #f1f5f9;
+$border-color-hover: #38bdf8;
+$border-radius-sm: 6px;
+$border-radius-base: 10px;
+$border-radius-lg: 14px;
+$border-radius-xl: 20px;
+
+// Typography & Text Colors
+$font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+$text-primary: #0f172a;
+$text-secondary: #475569;
+$text-muted: #94a3b8;
+$text-inverse: #ffffff;
+
+// Elevation & Shadows
+$shadow-card: 0 4px 20px rgba(2, 132, 199, 0.08);
+$shadow-card-hover: 0 8px 30px rgba(2, 132, 199, 0.14);
+$shadow-dropdown: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+$shadow-modal: 0 20px 40px -15px rgba(2, 132, 199, 0.2);
+
+// Spacing & Transitions
+$transition-base: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+

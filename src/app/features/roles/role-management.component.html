@@ -1,0 +1,121 @@
+<div class="role-management-page">
+  <!-- PAGE HEADER -->
+  <div class="page-header dental-card">
+    <div class="header-titles">
+      <h2>
+        <span nz-icon nzType="safety-certificate" class="text-ocean"></span>
+        Quản Lý Vai Trò Hệ Thống (RBAC Roles)
+      </h2>
+      <p class="subtitle">Định nghĩa các nhóm vai trò bảo mật (ROLE_ADMIN, ROLE_DOCTOR, ROLE_PATIENT) và quyền hạn truy cập</p>
+    </div>
+
+    <div class="header-actions">
+      <button nz-button nzType="primary" (click)="openCreateModal()" class="btn-create">
+        <span nz-icon nzType="plus"></span>
+        <span>Thêm vai trò mới</span>
+      </button>
+
+      <button nz-button nzType="default" (click)="loadRoles()" [nzLoading]="isLoading()" title="Làm mới">
+        <span nz-icon nzType="reload"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ROLES TABLE -->
+  <div class="dental-card table-card">
+    <nz-table
+      #roleTable
+      [nzData]="roles()"
+      [nzLoading]="isLoading()"
+      [nzShowPagination]="false"
+      class="dental-table"
+    >
+      <thead>
+        <tr>
+          <th nzWidth="100px">ID</th>
+          <th>Tên vai trò (Role Name)</th>
+          <th>Nhãn phân loại</th>
+          <th nzWidth="150px" nzAlign="center">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of roleTable.data; track item.id) {
+          <tr>
+            <td><strong class="text-ocean">#{{ item.id }}</strong></td>
+            <td>
+              <code>{{ item.name }}</code>
+            </td>
+            <td>
+              <nz-tag [nzColor]="getRoleColor(item.name)">
+                {{ item.name }}
+              </nz-tag>
+            </td>
+            <td nzAlign="center">
+              <div class="action-buttons">
+                <button
+                  nz-button
+                  nzType="text"
+                  nzSize="small"
+                  class="btn-edit"
+                  (click)="openEditModal(item)"
+                  nz-tooltip
+                  nzTooltipTitle="Chỉnh sửa vai trò"
+                >
+                  <span nz-icon nzType="edit"></span>
+                </button>
+
+                <button
+                  nz-button
+                  nzType="text"
+                  nzDanger
+                  nzSize="small"
+                  nz-popconfirm
+                  nzPopconfirmTitle="Bạn có chắc muốn xóa vai trò này?"
+                  (nzOnConfirm)="deleteRole(item.id)"
+                  nz-tooltip
+                  nzTooltipTitle="Xóa vai trò"
+                >
+                  <span nz-icon nzType="delete"></span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4" class="text-center py-8 text-muted">
+              Chưa có dữ liệu vai trò nào.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </nz-table>
+  </div>
+</div>
+
+<!-- ======================================================================== -->
+<!-- MODAL: CREATE / EDIT ROLE                                                -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isCreateModalVisible() || isEditModalVisible()"
+  [nzTitle]="isCreateModalVisible() ? 'Thêm Mới Vai Trò' : 'Cập Nhật Vai Trò'"
+  (nzOnCancel)="isCreateModalVisible.set(false); isEditModalVisible.set(false)"
+  (nzOnOk)="isCreateModalVisible() ? submitCreate() : submitEdit()"
+  nzOkText="Lưu vai trò"
+  nzCancelText="Hủy"
+>
+  <ng-container *nzModalContent>
+    <form [formGroup]="roleForm" nz-form nzLayout="vertical">
+      <nz-form-item>
+        <nz-form-label nzRequired>Tên vai trò (Role Name)</nz-form-label>
+        <nz-form-control nzErrorTip="Vui lòng nhập tên vai trò (ví dụ: ROLE_NURSE)!">
+          <input
+            nz-input
+            formControlName="name"
+            placeholder="ROLE_ADMIN / ROLE_DOCTOR / ROLE_STAFF..."
+          />
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </ng-container>
+</nz-modal>
+

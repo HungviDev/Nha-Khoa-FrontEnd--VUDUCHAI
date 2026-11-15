@@ -1,0 +1,204 @@
+<div class="doctor-management-page">
+  <!-- PAGE HEADER -->
+  <div class="page-header dental-card">
+    <div class="header-titles">
+      <h2>
+        <span nz-icon nzType="medicine-box" class="text-ocean"></span>
+        Quản Lý Đội Ngũ Bác Sĩ Nha Khoa
+      </h2>
+      <p class="subtitle">Quản trị hồ sơ chuyên môn, số năm kinh nghiệm và liên kết tài khoản bác sĩ trong hệ thống</p>
+    </div>
+
+    <div class="header-actions">
+      <nz-input-group nzPrefixIcon="search" class="search-input">
+        <input
+          type="text"
+          nz-input
+          placeholder="Tìm tên bác sĩ, chuyên khoa..."
+          [ngModel]="searchKeyword()"
+          (ngModelChange)="onSearch($event)"
+        />
+      </nz-input-group>
+
+      <button nz-button nzType="primary" (click)="openCreateModal()" class="btn-create">
+        <span nz-icon nzType="plus"></span>
+        <span>Thêm hồ sơ bác sĩ</span>
+      </button>
+
+      <button nz-button nzType="default" (click)="loadDoctors()" [nzLoading]="isLoading()" title="Làm mới">
+        <span nz-icon nzType="reload"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- DOCTORS TABLE -->
+  <div class="dental-card table-card">
+    <nz-table
+      #docTable
+      [nzData]="doctors()"
+      [nzLoading]="isLoading()"
+      [nzFrontPagination]="false"
+      [nzTotal]="totalElements()"
+      [nzPageIndex]="pageIndex()"
+      [nzPageSize]="pageSize()"
+      (nzPageIndexChange)="onPageChange($event)"
+      (nzPageSizeChange)="onPageSizeChange($event)"
+      [nzShowSizeChanger]="true"
+      [nzPageSizeOptions]="[5, 10, 20]"
+      class="dental-table"
+    >
+      <thead>
+        <tr>
+          <th nzWidth="80px">ID</th>
+          <th>Bác sĩ</th>
+          <th>Số điện thoại</th>
+          <th>Email</th>
+          <th>Chuyên khoa</th>
+          <th>Kinh nghiệm</th>
+          <th nzWidth="120px" nzAlign="center">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of docTable.data; track item.id) {
+          <tr>
+            <td><strong class="text-ocean">#{{ item.id }}</strong></td>
+            <td>
+              <div class="doctor-cell">
+                <nz-avatar
+                  [nzSrc]="item.user?.avatar || ''"
+                  [nzText]="(item.user?.fullname || 'B').charAt(0)"
+                  class="doctor-avatar"
+                ></nz-avatar>
+                <div class="doctor-meta">
+                  <span class="doctor-name">{{ item.user?.fullname || 'Bác sĩ #' + item.userId }}</span>
+                  <span class="doctor-badge">Bác sĩ chuyên khoa</span>
+                </div>
+              </div>
+            </td>
+            <td>{{ item.user?.phone || '—' }}</td>
+            <td>{{ item.user?.email || '—' }}</td>
+            <td>
+              <nz-tag nzColor="blue">{{ item.specialization }}</nz-tag>
+            </td>
+            <td>
+              <span class="font-semibold text-ocean">{{ item.experienceYears }} năm</span>
+            </td>
+            <td nzAlign="center">
+              <div class="action-buttons">
+                <button
+                  nz-button
+                  nzType="text"
+                  nzSize="small"
+                  class="btn-edit"
+                  (click)="openEditModal(item)"
+                  nz-tooltip
+                  nzTooltipTitle="Chỉnh sửa chuyên khoa & kinh nghiệm"
+                >
+                  <span nz-icon nzType="edit"></span>
+                </button>
+
+                <button
+                  nz-button
+                  nzType="text"
+                  nzDanger
+                  nzSize="small"
+                  nz-popconfirm
+                  nzPopconfirmTitle="Bạn có chắc chắn muốn xóa hồ sơ bác sĩ này?"
+                  (nzOnConfirm)="deleteDoctor(item.id)"
+                  nz-tooltip
+                  nzTooltipTitle="Xóa hồ sơ bác sĩ"
+                >
+                  <span nz-icon nzType="delete"></span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="7" class="text-center py-8 text-muted">
+              Không tìm thấy hồ sơ bác sĩ nào.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </nz-table>
+  </div>
+</div>
+
+<!-- ======================================================================== -->
+<!-- MODAL: CREATE DOCTOR PROFILE                                             -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isCreateModalVisible()"
+  nzTitle="Khởi Tạo Hồ Sơ Bác Sĩ Mới"
+  (nzOnCancel)="isCreateModalVisible.set(false)"
+  (nzOnOk)="submitCreate()"
+  nzOkText="Tạo hồ sơ"
+  nzCancelText="Hủy"
+  [nzWidth]="540"
+>
+  <ng-container *nzModalContent>
+    <form [formGroup]="createForm" nz-form nzLayout="vertical">
+      <nz-form-item>
+        <nz-form-label nzRequired>Tài khoản người dùng (User)</nz-form-label>
+        <nz-form-control nzErrorTip="Vui lòng chọn tài khoản người dùng!">
+          <nz-select formControlName="userId" nzPlaceHolder="Chọn tài khoản có Role DOCTOR">
+            @for (u of users(); track u.id) {
+              <nz-option [nzValue]="u.id" [nzLabel]="u.fullname + ' (' + u.email + ')'"></nz-option>
+            }
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label nzRequired>Chuyên khoa nha khoa</nz-form-label>
+        <nz-form-control nzErrorTip="Vui lòng nhập chuyên khoa!">
+          <input
+            nz-input
+            formControlName="specialization"
+            placeholder="Ví dụ: Răng Hàm Mặt, Cấy Ghép Implant, Niềng Răng Chỉnh Nha..."
+          />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label nzRequired>Số năm kinh nghiệm</nz-form-label>
+        <nz-form-control nzErrorTip="Vui lòng nhập số năm kinh nghiệm!">
+          <nz-input-number formControlName="experienceYears" [nzMin]="0" class="w-full"></nz-input-number>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </ng-container>
+</nz-modal>
+
+<!-- ======================================================================== -->
+<!-- MODAL: EDIT DOCTOR PROFILE                                               -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isEditModalVisible()"
+  nzTitle="Cập Nhật Hồ Sơ Chuyên Môn Bác Sĩ"
+  (nzOnCancel)="isEditModalVisible.set(false)"
+  (nzOnOk)="submitEdit()"
+  nzOkText="Lưu thay đổi"
+  nzCancelText="Hủy"
+  [nzWidth]="540"
+>
+  <ng-container *nzModalContent>
+    <form [formGroup]="editForm" nz-form nzLayout="vertical">
+      <nz-form-item>
+        <nz-form-label nzRequired>Chuyên khoa nha khoa</nz-form-label>
+        <nz-form-control nzErrorTip="Vui lòng nhập chuyên khoa!">
+          <input nz-input formControlName="specialization" />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label nzRequired>Số năm kinh nghiệm</nz-form-label>
+        <nz-form-control nzErrorTip="Vui lòng nhập số năm kinh nghiệm!">
+          <nz-input-number formControlName="experienceYears" [nzMin]="0" class="w-full"></nz-input-number>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </ng-container>
+</nz-modal>
+

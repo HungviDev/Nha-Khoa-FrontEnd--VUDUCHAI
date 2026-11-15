@@ -1,0 +1,101 @@
+@use '../../../styles/variables' as *;
+
+.service-catalog-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .header-titles {
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: $text-primary;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .subtitle {
+      margin: 4px 0 0 0;
+      font-size: 13px;
+      color: $text-muted;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    .search-input {
+      width: 250px;
+    }
+
+    .btn-create {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+}
+
+.table-card {
+  padding: 0;
+  overflow: hidden;
+
+  .service-thumb {
+    border-radius: $border-radius-sm;
+    background-color: $primary-50;
+    color: $primary-color;
+  }
+
+  .service-name {
+    color: $text-primary;
+    font-size: 14px;
+  }
+
+  .service-desc {
+    display: block;
+    max-width: 320px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+    color: $text-secondary;
+  }
+
+  .service-price {
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .action-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    .btn-edit {
+      color: $primary-color;
+
+      &:hover {
+        background-color: $primary-50;
+      }
+    }
+  }
+}
+
+.w-full {
+  width: 100%;
+}
+

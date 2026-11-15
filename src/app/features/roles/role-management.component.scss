@@ -1,0 +1,69 @@
+@use '../../../styles/variables' as *;
+
+.role-management-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .header-titles {
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: $text-primary;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .subtitle {
+      margin: 4px 0 0 0;
+      font-size: 13px;
+      color: $text-muted;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+}
+
+.table-card {
+  padding: 0;
+  overflow: hidden;
+
+  code {
+    background: $primary-50;
+    color: $primary-dark;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .action-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    .btn-edit {
+      color: $primary-color;
+
+      &:hover {
+        background-color: $primary-50;
+      }
+    }
+  }
+}
+

@@ -1,0 +1,281 @@
+<div class="user-management-page">
+  <!-- PAGE HEADER -->
+  <div class="page-header dental-card">
+    <div class="header-titles">
+      <h2>
+        <span nz-icon nzType="usergroup-add" class="text-ocean"></span>
+        Quản Lý Danh Bạ Tài Khoản & Phân Quyền
+      </h2>
+      <p class="subtitle">Quản trị toàn bộ tài khoản người dùng, gán vai trò (ADMIN, DOCTOR, PATIENT) và quản lý quyền truy cập</p>
+    </div>
+
+    <div class="header-actions">
+      <!-- Search input -->
+      <nz-input-group nzPrefixIcon="search" class="search-input">
+        <input
+          type="text"
+          nz-input
+          placeholder="Tìm tên, số điện thoại, email..."
+          [ngModel]="searchKeyword()"
+          (ngModelChange)="onSearch($event)"
+        />
+      </nz-input-group>
+
+      <button nz-button nzType="primary" (click)="openCreateModal()" class="btn-create">
+        <span nz-icon nzType="user-add"></span>
+        <span>Thêm tài khoản mới</span>
+      </button>
+
+      <button nz-button nzType="default" (click)="loadUsers()" [nzLoading]="isLoading()" title="Làm mới">
+        <span nz-icon nzType="reload"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- USERS TABLE -->
+  <div class="dental-card table-card">
+    <nz-table
+      #userTable
+      [nzData]="users()"
+      [nzLoading]="isLoading()"
+      [nzFrontPagination]="false"
+      [nzTotal]="totalElements()"
+      [nzPageIndex]="pageIndex()"
+      [nzPageSize]="pageSize()"
+      (nzPageIndexChange)="onPageChange($event)"
+      (nzPageSizeChange)="onPageSizeChange($event)"
+      [nzShowSizeChanger]="true"
+      [nzPageSizeOptions]="[5, 10, 20, 50]"
+      class="dental-table"
+    >
+      <thead>
+        <tr>
+          <th nzWidth="80px">ID</th>
+          <th>Người dùng</th>
+          <th>Số điện thoại</th>
+          <th>Email</th>
+          <th>Ngày sinh</th>
+          <th>Địa chỉ</th>
+          <th>Vai trò</th>
+          <th nzWidth="120px" nzAlign="center">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of userTable.data; track item.id) {
+          <tr>
+            <td>
+              <strong class="text-ocean">#{{ item.id }}</strong>
+            </td>
+            <td>
+              <div class="user-cell">
+                <nz-avatar
+                  [nzSrc]="item.avatar || ''"
+                  [nzText]="item.fullname.charAt(0)"
+                  class="user-avatar"
+                ></nz-avatar>
+                <div class="user-meta">
+                  <span class="user-name">{{ item.fullname }}</span>
+                  <span class="user-joined">Đã tham gia</span>
+                </div>
+              </div>
+            </td>
+            <td>{{ item.phone }}</td>
+            <td>{{ item.email }}</td>
+            <td>{{ item.birthDate || '—' }}</td>
+            <td>
+              <span class="text-truncate" [title]="item.address || ''">
+                {{ item.address || '—' }}
+              </span>
+            </td>
+            <td>
+              <nz-tag [nzColor]="getRoleBadgeColor(item.role.name || '')">
+                {{ item.role.name }}
+              </nz-tag>
+            </td>
+            <td nzAlign="center">
+              <div class="action-buttons">
+                <button
+                  nz-button
+                  nzType="text"
+                  nzSize="small"
+                  class="btn-edit"
+                  (click)="openEditModal(item)"
+                  nz-tooltip
+                  nzTooltipTitle="Chỉnh sửa tài khoản"
+                >
+                  <span nz-icon nzType="edit"></span>
+                </button>
+
+                <button
+                  nz-button
+                  nzType="text"
+                  nzDanger
+                  nzSize="small"
+                  nz-popconfirm
+                  nzPopconfirmTitle="Bạn có chắc chắn muốn xóa tài khoản này?"
+                  (nzOnConfirm)="deleteUser(item.id)"
+                  nz-tooltip
+                  nzTooltipTitle="Xóa người dùng"
+                >
+                  <span nz-icon nzType="delete"></span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="8" class="text-center py-8 text-muted">
+              Không tìm thấy tài khoản người dùng nào.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </nz-table>
+  </div>
+</div>
+
+<!-- ======================================================================== -->
+<!-- MODAL: CREATE USER                                                       -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isCreateModalVisible()"
+  nzTitle="Thêm Mới Tài Khoản Người Dùng"
+  (nzOnCancel)="isCreateModalVisible.set(false)"
+  (nzOnOk)="submitCreate()"
+  nzOkText="Tạo tài khoản"
+  nzCancelText="Hủy"
+  [nzWidth]="640"
+>
+  <ng-container *nzModalContent>
+    <form [formGroup]="createForm" nz-form nzLayout="vertical">
+      <div class="grid-2-cols">
+        <nz-form-item>
+          <nz-form-label nzRequired>Họ và tên</nz-form-label>
+          <nz-form-control nzErrorTip="Vui lòng nhập họ và tên!">
+            <input nz-input formControlName="fullname" placeholder="Nguyễn Văn A" />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label nzRequired>Số điện thoại</nz-form-label>
+          <nz-form-control nzErrorTip="Số điện thoại phải từ 9 đến 15 chữ số!">
+            <input nz-input formControlName="phone" placeholder="0901234567" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="grid-2-cols">
+        <nz-form-item>
+          <nz-form-label nzRequired>Email</nz-form-label>
+          <nz-form-control nzErrorTip="Vui lòng nhập email hợp lệ!">
+            <input nz-input formControlName="email" type="email" placeholder="example@dental.com" />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label nzRequired>Mật khẩu khởi tạo</nz-form-label>
+          <nz-form-control nzErrorTip="Mật khẩu tối thiểu 6 ký tự!">
+            <input nz-input formControlName="password" type="password" placeholder="Mật khẩu bảo mật" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="grid-2-cols">
+        <nz-form-item>
+          <nz-form-label nzRequired>Vai trò hệ thống (Role)</nz-form-label>
+          <nz-form-control nzErrorTip="Vui lòng chọn vai trò!">
+            <nz-select formControlName="roleId" nzPlaceHolder="Chọn vai trò">
+              @for (r of roles(); track r.id) {
+                <nz-option [nzValue]="r.id" [nzLabel]="r.name"></nz-option>
+              }
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label>Ngày sinh</nz-form-label>
+          <nz-form-control>
+            <nz-date-picker formControlName="birthDate" class="w-full" nzFormat="yyyy-MM-dd"></nz-date-picker>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <nz-form-item>
+        <nz-form-label>Địa chỉ liên lạc</nz-form-label>
+        <nz-form-control>
+          <input nz-input formControlName="address" placeholder="Số nhà, đường, quận/huyện, thành phố..." />
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </ng-container>
+</nz-modal>
+
+<!-- ======================================================================== -->
+<!-- MODAL: EDIT USER                                                         -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isEditModalVisible()"
+  nzTitle="Cập Nhật Thông Tin Tài Khoản"
+  (nzOnCancel)="isEditModalVisible.set(false)"
+  (nzOnOk)="submitEdit()"
+  nzOkText="Lưu thay đổi"
+  nzCancelText="Đóng"
+  [nzWidth]="640"
+>
+  <ng-container *nzModalContent>
+    <form [formGroup]="editForm" nz-form nzLayout="vertical">
+      <div class="grid-2-cols">
+        <nz-form-item>
+          <nz-form-label nzRequired>Họ và tên</nz-form-label>
+          <nz-form-control nzErrorTip="Vui lòng nhập họ và tên!">
+            <input nz-input formControlName="fullname" />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label nzRequired>Số điện thoại</nz-form-label>
+          <nz-form-control nzErrorTip="Số điện thoại phải từ 9 đến 15 chữ số!">
+            <input nz-input formControlName="phone" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="grid-2-cols">
+        <nz-form-item>
+          <nz-form-label nzRequired>Email</nz-form-label>
+          <nz-form-control nzErrorTip="Vui lòng nhập email hợp lệ!">
+            <input nz-input formControlName="email" type="email" />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label nzRequired>Vai trò hệ thống (Role)</nz-form-label>
+          <nz-form-control nzErrorTip="Vui lòng chọn vai trò!">
+            <nz-select formControlName="roleId">
+              @for (r of roles(); track r.id) {
+                <nz-option [nzValue]="r.id" [nzLabel]="r.name"></nz-option>
+              }
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="grid-2-cols">
+        <nz-form-item>
+          <nz-form-label>Ngày sinh</nz-form-label>
+          <nz-form-control>
+            <nz-date-picker formControlName="birthDate" class="w-full" nzFormat="yyyy-MM-dd"></nz-date-picker>
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label>Địa chỉ liên lạc</nz-form-label>
+          <nz-form-control>
+            <input nz-input formControlName="address" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </form>
+  </ng-container>
+</nz-modal>
+

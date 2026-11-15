@@ -1,0 +1,113 @@
+// ==============================================================================
+// DOCTOR MANAGEMENT SCSS - OCEAN DENTAL STYLING
+// ==============================================================================
+
+@use '../../../styles/variables' as *;
+
+.doctor-management-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .header-titles {
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: $text-primary;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .subtitle {
+      margin: 4px 0 0 0;
+      font-size: 13px;
+      color: $text-muted;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    .search-input {
+      width: 260px;
+    }
+
+    .btn-create {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+}
+
+.table-card {
+  padding: 0;
+  overflow: hidden;
+
+  .doctor-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .doctor-avatar {
+      background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+      color: #ffffff;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2);
+    }
+
+    .doctor-meta {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.3;
+
+      .doctor-name {
+        font-weight: 600;
+        color: $text-primary;
+      }
+
+      .doctor-badge {
+        font-size: 11px;
+        color: $primary-color;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .font-semibold {
+    font-weight: 600;
+  }
+
+  .action-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    .btn-edit {
+      color: $primary-color;
+
+      &:hover {
+        background-color: $primary-50;
+      }
+    }
+  }
+}
+
+.w-full {
+  width: 100%;
+}
+

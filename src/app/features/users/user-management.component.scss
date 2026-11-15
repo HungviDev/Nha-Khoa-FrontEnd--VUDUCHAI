@@ -1,0 +1,124 @@
+// ==============================================================================
+// USER MANAGEMENT SCSS
+// ==============================================================================
+
+@use '../../../styles/variables' as *;
+
+.user-management-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .header-titles {
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: $text-primary;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .subtitle {
+      margin: 4px 0 0 0;
+      font-size: 13px;
+      color: $text-muted;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    .search-input {
+      width: 260px;
+    }
+
+    .btn-create {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+}
+
+.table-card {
+  padding: 0;
+  overflow: hidden;
+
+  .user-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .user-avatar {
+      background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .user-meta {
+      display: flex;
+      flex-direction: column;
+
+      .user-name {
+        font-weight: 600;
+        color: $text-primary;
+      }
+
+      .user-joined {
+        font-size: 11px;
+        color: $text-muted;
+      }
+    }
+  }
+
+  .text-truncate {
+    display: block;
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .action-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    .btn-edit {
+      color: $primary-color;
+
+      &:hover {
+        background-color: $primary-50;
+      }
+    }
+  }
+}
+
+.grid-2-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.w-full {
+  width: 100%;
+}
+

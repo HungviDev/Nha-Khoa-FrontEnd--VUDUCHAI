@@ -1,0 +1,122 @@
+<div class="user-profile-page">
+  <div class="dental-card profile-card">
+    <div class="profile-header">
+      <div class="avatar-block">
+        <nz-avatar
+          [nzSrc]="currentUser()?.avatar || ''"
+          [nzText]="(currentUser()?.fullname || 'U').charAt(0)"
+          [nzSize]="72"
+          class="profile-avatar"
+        ></nz-avatar>
+        <div class="user-info">
+          <h2>{{ currentUser()?.fullname }}</h2>
+          <div class="meta-row">
+            <nz-tag nzColor="blue">{{ currentUser()?.role?.name }}</nz-tag>
+            <span class="user-email text-muted">{{ currentUser()?.email }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <nz-divider></nz-divider>
+
+    <!-- BASIC USER INFO FORM -->
+    <div class="form-section">
+      <h3>
+        <span nz-icon nzType="user" class="text-ocean"></span>
+        Thông Tin Tài Khoản Cá Nhân
+      </h3>
+
+      <form [formGroup]="profileForm" (ngSubmit)="submitProfileUpdate()" nz-form nzLayout="vertical">
+        <div class="grid-2-cols">
+          <nz-form-item>
+            <nz-form-label nzRequired>Họ và tên</nz-form-label>
+            <nz-form-control nzErrorTip="Vui lòng nhập họ và tên!">
+              <input nz-input formControlName="fullname" />
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item>
+            <nz-form-label nzRequired>Số điện thoại</nz-form-label>
+            <nz-form-control nzErrorTip="Số điện thoại từ 9 đến 15 chữ số!">
+              <input nz-input formControlName="phone" />
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <div class="grid-2-cols">
+          <nz-form-item>
+            <nz-form-label nzRequired>Email</nz-form-label>
+            <nz-form-control nzErrorTip="Email không hợp lệ!">
+              <input nz-input formControlName="email" type="email" />
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item>
+            <nz-form-label>Ngày sinh</nz-form-label>
+            <nz-form-control>
+              <nz-date-picker formControlName="birthDate" class="w-full" nzFormat="yyyy-MM-dd"></nz-date-picker>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <div class="grid-2-cols">
+          <nz-form-item>
+            <nz-form-label>Địa chỉ</nz-form-label>
+            <nz-form-control>
+              <input nz-input formControlName="address" />
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item>
+            <nz-form-label>URL Ảnh đại diện (Avatar)</nz-form-label>
+            <nz-form-control>
+              <input nz-input formControlName="avatar" placeholder="https://..." />
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <button nz-button nzType="primary" [nzLoading]="isSaving()" class="btn-save">
+          <span nz-icon nzType="save"></span>
+          <span>Lưu thông tin cá nhân</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- DOCTOR SPECIFIC CREDENTIALS FORM -->
+    @if (isDoctor()) {
+      <nz-divider></nz-divider>
+
+      <div class="form-section">
+        <h3>
+          <span nz-icon nzType="medicine-box" class="text-ocean"></span>
+          Hồ Sơ Chuyên Môn Bác Sĩ Nha Khoa
+        </h3>
+
+        <form [formGroup]="doctorForm" (ngSubmit)="submitDoctorUpdate()" nz-form nzLayout="vertical">
+          <div class="grid-2-cols">
+            <nz-form-item>
+              <nz-form-label nzRequired>Chuyên khoa điều trị</nz-form-label>
+              <nz-form-control nzErrorTip="Vui lòng nhập chuyên khoa!">
+                <input nz-input formControlName="specialization" />
+              </nz-form-control>
+            </nz-form-item>
+
+            <nz-form-item>
+              <nz-form-label nzRequired>Số năm kinh nghiệm</nz-form-label>
+              <nz-form-control nzErrorTip="Vui lòng nhập số năm kinh nghiệm!">
+                <nz-input-number formControlName="experienceYears" [nzMin]="0" class="w-full"></nz-input-number>
+              </nz-form-control>
+            </nz-form-item>
+          </div>
+
+          <button nz-button nzType="primary" [nzLoading]="isSaving()" class="btn-save">
+            <span nz-icon nzType="safety"></span>
+            <span>Cập nhật hồ sơ chuyên môn</span>
+          </button>
+        </form>
+      </div>
+    }
+  </div>
+</div>
+

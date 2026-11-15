@@ -1,0 +1,350 @@
+<div class="appointment-page">
+  <!-- PAGE HEADER & ACTION BAR -->
+  <div class="page-header dental-card">
+    <div class="header-titles">
+      <h2>
+        <span nz-icon nzType="calendar" class="text-ocean"></span>
+        @if (userRole() === 'PATIENT') {
+          Quản Lý Lịch Hẹn Khám Cá Nhân
+        } @else if (userRole() === 'DOCTOR') {
+          Lịch Khám Chữa Bệnh Trong Ngày
+        } @else {
+          Điều Phối & Giám Sát Lịch Hẹn Toàn Viện
+        }
+      </h2>
+      <p class="subtitle">Theo dõi lịch khám, phân bổ bác sĩ, quản lý trạng thái và phòng ngừa xung đột lịch 30 phút</p>
+    </div>
+
+    <div class="header-actions">
+      <!-- Status Filters -->
+      <nz-select
+        class="status-filter-select"
+        [ngModel]="selectedStatusFilter()"
+        (ngModelChange)="filterByStatus($event)"
+        nzPlaceHolder="Lọc theo trạng thái"
+        nzAllowClear
+      >
+        <nz-option [nzValue]="null" nzLabel="Tất cả trạng thái"></nz-option>
+        @for (st of appointmentStatuses; track st.value) {
+          <nz-option [nzValue]="st.value" [nzLabel]="st.label"></nz-option>
+        }
+      </nz-select>
+
+      <!-- Book new appointment button -->
+      <button nz-button nzType="primary" (click)="openBookingModal()" class="btn-create">
+        <span nz-icon nzType="plus"></span>
+        <span>Đặt lịch khám mới</span>
+      </button>
+
+      <button nz-button nzType="default" (click)="loadAppointments()" [nzLoading]="isLoading()" title="Làm mới">
+        <span nz-icon nzType="reload"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN APPOINTMENTS TABLE -->
+  <div class="dental-card table-card">
+    <nz-table
+      #apptTable
+      [nzData]="appointments()"
+      [nzLoading]="isLoading()"
+      [nzFrontPagination]="false"
+      [nzTotal]="totalElements()"
+      [nzPageIndex]="pageIndex()"
+      [nzPageSize]="pageSize()"
+      (nzPageIndexChange)="onPageChange($event)"
+      (nzPageSizeChange)="onPageSizeChange($event)"
+      [nzShowSizeChanger]="true"
+      [nzPageSizeOptions]="[5, 10, 20, 50]"
+      class="dental-table"
+    >
+      <thead>
+        <tr>
+          <th nzWidth="90px">Mã LH</th>
+          <th>Bệnh nhân</th>
+          <th>Bác sĩ phụ trách</th>
+          <th>Dịch vụ y tế</th>
+          <th>Thời gian hẹn</th>
+          <th>Giai đoạn</th>
+          <th>Trạng thái</th>
+          <th>Ghi chú</th>
+          <th nzWidth="150px" nzAlign="center">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (data of apptTable.data; track data.id) {
+          <tr>
+            <td>
+              <strong class="text-ocean">#{{ data.id }}</strong>
+            </td>
+
+            <!-- Patient Info -->
+            <td>
+              <div class="cell-user">
+                <span class="user-name">{{ data.user?.fullname || 'Bệnh nhân #' + data.userId }}</span>
+                <span class="user-sub">{{ data.user?.phone }}</span>
+              </div>
+            </td>
+
+            <!-- Doctor Info -->
+            <td>
+              <div class="cell-doctor">
+                <span class="doc-name">{{ data.doctor?.user?.fullname || 'BS #' + data.doctorId }}</span>
+                <span class="doc-spec">{{ data.doctor?.specialization }}</span>
+              </div>
+            </td>
+
+            <!-- Service Info -->
+            <td>
+              <div class="cell-service">
+                <span class="service-name">{{ data.service?.name }}</span>
+                <span class="service-price text-ocean">{{ data.service?.price | number }} đ</span>
+              </div>
+            </td>
+
+            <!-- Appointment Date -->
+            <td>
+              <div class="cell-date">
+                <span nz-icon nzType="clock-circle"></span>
+                <span>{{ data.appointmentDate }}</span>
+              </div>
+            </td>
+
+            <!-- Stage Name -->
+            <td>
+              <nz-tag nzColor="blue">{{ data.stageName || 'Khám tổng quát' }}</nz-tag>
+            </td>
+
+            <!-- Status Badge -->
+            <td>
+              @switch (data.status) {
+                @case ('CONFIRMED') {
+                  <span class="status-badge status-badge--confirmed">Đã xác nhận</span>
+                }
+                @case ('COMPLETED') {
+                  <span class="status-badge status-badge--completed">Đã hoàn thành</span>
+                }
+                @case ('PENDING') {
+                  <span class="status-badge status-badge--pending">Chờ xác nhận</span>
+                }
+                @case ('CANCELLED') {
+                  <span class="status-badge status-badge--cancelled">Đã hủy lịch</span>
+                }
+                @default {
+                  <nz-tag>{{ data.status }}</nz-tag>
+                }
+              }
+            </td>
+
+            <!-- Note -->
+            <td>
+              <span class="note-text" [title]="data.note || ''">
+                {{ data.note || '—' }}
+              </span>
+            </td>
+
+            <!-- Actions -->
+            <td nzAlign="center">
+              <div class="action-buttons">
+                @if (canChangeStatus() && data.status !== 'CANCELLED' && data.status !== 'COMPLETED') {
+                  <button
+                    nz-button
+                    nzType="text"
+                    nzSize="small"
+                    class="btn-action btn-action--edit"
+                    (click)="openStatusModal(data)"
+                    nz-tooltip
+                    nzTooltipTitle="Đổi trạng thái lịch khám"
+                  >
+                    <span nz-icon nzType="edit"></span>
+                  </button>
+                }
+
+                @if (data.status === 'PENDING' || data.status === 'CONFIRMED') {
+                  <button
+                    nz-button
+                    nzType="text"
+                    nzDanger
+                    nzSize="small"
+                    class="btn-action btn-action--cancel"
+                    (click)="openCancelModal(data)"
+                    nz-tooltip
+                    nzTooltipTitle="Hủy lịch hẹn"
+                  >
+                    <span nz-icon nzType="close-circle"></span>
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="9" class="text-center py-8 text-muted">
+              Không có dữ liệu lịch hẹn nào phù hợp với bộ lọc hiện tại.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </nz-table>
+  </div>
+</div>
+
+<!-- ======================================================================== -->
+<!-- MODAL 1: UPDATE APPOINTMENT STATUS (ADMIN / DOCTOR)                      -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isStatusModalVisible()"
+  nzTitle="Cập nhật trạng thái lịch hẹn khám"
+  (nzOnCancel)="isStatusModalVisible.set(false)"
+  (nzOnOk)="submitStatusUpdate()"
+  nzOkText="Lưu thay đổi"
+  nzCancelText="Đóng"
+>
+  <ng-container *nzModalContent>
+    <form [formGroup]="statusForm" nz-form nzLayout="vertical">
+      <nz-form-item>
+        <nz-form-label nzRequired>Trạng thái mới</nz-form-label>
+        <nz-form-control nzErrorTip="Vui lòng chọn trạng thái!">
+          <nz-select formControlName="status" nzPlaceHolder="Chọn trạng thái">
+            <nz-option nzValue="CONFIRMED" nzLabel="CONFIRMED (Xác nhận lịch)"></nz-option>
+            <nz-option nzValue="COMPLETED" nzLabel="COMPLETED (Đã khám xong)"></nz-option>
+            <nz-option nzValue="CANCELLED" nzLabel="CANCELLED (Hủy bỏ)"></nz-option>
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label>Ghi chú nội bộ của bác sĩ</nz-form-label>
+        <nz-form-control>
+          <textarea
+            nz-input
+            formControlName="note"
+            rows="3"
+            placeholder="Nhập ghi chú hoặc lý do chuyển trạng thái..."
+          ></textarea>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </ng-container>
+</nz-modal>
+
+<!-- ======================================================================== -->
+<!-- MODAL 2: BOOK NEW APPOINTMENT (PATIENT / ALL)                            -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isBookingModalVisible()"
+  nzTitle="Đặt Lịch Khám Nha Khoa Mới"
+  (nzOnCancel)="isBookingModalVisible.set(false)"
+  (nzOnOk)="submitBooking()"
+  nzOkText="Xác nhận Đặt lịch"
+  nzCancelText="Hủy"
+  [nzWidth]="640"
+>
+  <ng-container *nzModalContent>
+    <form [formGroup]="bookingForm" nz-form nzLayout="vertical">
+      <div class="grid-2-cols">
+        <!-- Select Doctor -->
+        <nz-form-item>
+          <nz-form-label nzRequired>Bác sĩ điều trị</nz-form-label>
+          <nz-form-control nzErrorTip="Vui lòng chọn bác sĩ!">
+            <nz-select formControlName="doctorId" nzPlaceHolder="Chọn bác sĩ phụ trách">
+              @for (doc of doctors(); track doc.id) {
+                <nz-option
+                  [nzValue]="doc.id"
+                  [nzLabel]="(doc.user?.fullname || 'Bác sĩ') + ' (' + doc.specialization + ' - ' + doc.experienceYears + ' năm KN)'"
+                ></nz-option>
+              }
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+
+        <!-- Select Dental Service -->
+        <nz-form-item>
+          <nz-form-label nzRequired>Dịch vụ nha khoa</nz-form-label>
+          <nz-form-control nzErrorTip="Vui lòng chọn dịch vụ!">
+            <nz-select formControlName="serviceId" nzPlaceHolder="Chọn dịch vụ khám">
+              @for (srv of services(); track srv.id) {
+                <nz-option
+                  [nzValue]="srv.id"
+                  [nzLabel]="srv.name + ' - ' + (srv.price | number) + ' đ'"
+                ></nz-option>
+              }
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="grid-2-cols">
+        <!-- Appointment Date Picker (Date + Time) -->
+        <nz-form-item>
+          <nz-form-label nzRequired>Ngày & Giờ khám dự kiến</nz-form-label>
+          <nz-form-control nzErrorTip="Vui lòng chọn thời gian khám!">
+            <nz-date-picker
+              formControlName="appointmentDate"
+              nzShowTime
+              nzFormat="yyyy-MM-dd HH:mm:ss"
+              class="w-full"
+              nzPlaceHolder="Chọn ngày và giờ"
+            ></nz-date-picker>
+          </nz-form-control>
+        </nz-form-item>
+
+        <!-- Stage Name -->
+        <nz-form-item>
+          <nz-form-label>Tên giai đoạn khám</nz-form-label>
+          <nz-form-control>
+            <input nz-input formControlName="stageName" placeholder="Ví dụ: Khám định kỳ, Lấy cao răng..." />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <!-- Note -->
+      <nz-form-item>
+        <nz-form-label>Mô tả triệu chứng hoặc ghi chú bệnh nhân</nz-form-label>
+        <nz-form-control>
+          <textarea
+            nz-input
+            formControlName="note"
+            rows="3"
+            placeholder="Mô tả răng đau, răng sâu hoặc yêu cầu thăm khám..."
+          ></textarea>
+        </nz-form-control>
+      </nz-form-item>
+
+      <div class="alert-info-box">
+        <span nz-icon nzType="info-circle" class="text-ocean"></span>
+        <small>Hệ thống tự động kích hoạt cơ chế phòng chống trùng lịch 30 phút đối với cả Bác sĩ và Bệnh nhân.</small>
+      </div>
+    </form>
+  </ng-container>
+</nz-modal>
+
+<!-- ======================================================================== -->
+<!-- MODAL 3: CANCEL APPOINTMENT                                              -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isCancelModalVisible()"
+  nzTitle="Xác nhận Hủy Lịch Khám"
+  (nzOnCancel)="isCancelModalVisible.set(false)"
+  (nzOnOk)="submitCancel()"
+  nzOkText="Xác nhận hủy lịch"
+  nzOkDanger="true"
+  nzCancelText="Quay lại"
+>
+  <ng-container *nzModalContent>
+    <form [formGroup]="cancelForm" nz-form nzLayout="vertical">
+      <nz-form-item>
+        <nz-form-label nzRequired>Lý do hủy lịch khám</nz-form-label>
+        <nz-form-control nzErrorTip="Vui lòng nêu rõ lý do hủy (tối thiểu 5 ký tự)!">
+          <textarea
+            nz-input
+            formControlName="reason"
+            rows="3"
+            placeholder="Nhập lý do bận việc, dời ngày, v.v..."
+          ></textarea>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </ng-container>
+</nz-modal>
+
