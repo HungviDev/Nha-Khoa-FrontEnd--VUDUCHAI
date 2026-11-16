@@ -11,9 +11,10 @@ export const authGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
 
   if (authService.getAccessToken()) {
+    console.log('da co token');
     return true;
   }
-
+  console.log(' chua co token');
   // Not authenticated: redirect to login
   // Avoid trapping default route or root as returnUrl
   const isDefaultOrRoot = !state.url || state.url === '/' || state.url === '/patient/booking';

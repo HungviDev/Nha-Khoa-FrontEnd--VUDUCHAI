@@ -62,11 +62,11 @@ export class AuthService {
 
   constructor() {
     // If token exists on app launch, fetch latest profile from backend
-    if (this.getAccessToken()) {
-      this.getMe().subscribe({
-        error: () => this.clearSession()
-      });
-    }
+    // if (this.getAccessToken()) {
+    //   this.getMe().subscribe({
+    //     error: () => this.clearSession()
+    //   });
+    // }
   }
 
   // ----------------------------------------------------------------------------
@@ -113,17 +113,17 @@ export class AuthService {
     return null;
   }
 
-  private setTokens(accessToken: string, refreshToken: string): void {
+  setTokens(accessToken: string, refreshToken: string): void {
     localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
     localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
   }
 
-  private setStoredUser(user: User): void {
+  setStoredUser(user: User): void {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
     this.currentUser.set(user);
   }
 
-  private getStoredUser(): User | null {
+  getStoredUser(): User | null {
     const raw = localStorage.getItem(USER_KEY);
     if (!raw) return null;
     try {

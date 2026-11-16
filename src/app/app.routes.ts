@@ -10,7 +10,7 @@ import { AuthService } from './core/services/auth.service';
 import { MainLayoutComponent } from './layouts/main-layout/main-layout.component';
 
 export const routes: Routes = [
-  // ----------------------------------------------------------------------------
+  // ----------
   // 1. PUBLIC ROUTES
   // ----------------------------------------------------------------------------
   {

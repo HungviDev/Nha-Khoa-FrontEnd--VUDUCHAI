@@ -8,7 +8,8 @@
 @import 'ng-zorro-antd/ng-zorro-antd.min.css';
 
 // Base CSS Reset & Layout
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -61,7 +62,8 @@ a {
     margin-bottom: 20px;
     border-bottom: 1px solid $border-color-light;
 
-    h3, h4 {
+    h3,
+    h4 {
       margin: 0;
       color: $text-primary;
       font-weight: 600;
@@ -69,7 +71,8 @@ a {
       align-items: center;
       gap: 10px;
 
-      i, nz-icon {
+      i,
+      nz-icon {
         color: $primary-color;
       }
     }
@@ -85,7 +88,8 @@ a {
   font-weight: 500 !important;
   transition: $transition-base !important;
 
-  &:hover, &:focus {
+  &:hover,
+  &:focus {
     background-color: $secondary-color !important;
     border-color: $secondary-color !important;
     box-shadow: 0 6px 16px rgba(14, 165, 233, 0.35) !important;
@@ -124,11 +128,12 @@ a {
 }
 
 // Table Styling (Clinical & Crisp)
-.dental-table, .ant-table {
+.dental-table,
+.ant-table {
   border-radius: $border-radius-base;
   overflow: hidden;
 
-  .ant-table-thead > tr > th {
+  .ant-table-thead>tr>th {
     background-color: $bg-light !important;
     color: $primary-darker !important;
     font-weight: 600 !important;
@@ -139,17 +144,17 @@ a {
     padding: 14px 16px !important;
   }
 
-  .ant-table-tbody > tr {
+  .ant-table-tbody>tr {
     transition: $transition-base;
 
-    > td {
+    >td {
       border-bottom: 1px solid $border-color-light !important;
       padding: 16px !important;
       color: $text-secondary;
       font-size: 14px;
     }
 
-    &:hover > td {
+    &:hover>td {
       background-color: #f8fbff !important;
     }
   }
@@ -190,7 +195,9 @@ a {
   }
 
   // Success: CONFIRMED, COMPLETED, SUCCESS
-  &--confirmed, &--completed, &--success {
+  &--confirmed,
+  &--completed,
+  &--success {
     background-color: $status-success-bg;
     color: $status-success;
     border: 1px solid $status-success-border;
@@ -202,7 +209,8 @@ a {
   }
 
   // Warning: PENDING, IN_PROGRESS
-  &--pending, &--in-progress {
+  &--pending,
+  &--in-progress {
     background-color: $status-warning-bg;
     color: $status-warning;
     border: 1px solid $status-warning-border;
@@ -214,7 +222,8 @@ a {
   }
 
   // Danger: CANCELLED, FAILED
-  &--cancelled, &--failed {
+  &--cancelled,
+  &--failed {
     background-color: $status-danger-bg;
     color: $status-danger;
     border: 1px solid $status-danger-border;
@@ -226,7 +235,8 @@ a {
   }
 
   // Neutral: REFUNDED, ARCHIVED
-  &--refunded, &--neutral {
+  &--refunded,
+  &--neutral {
     background-color: $status-neutral-bg;
     color: $status-neutral;
     border: 1px solid $status-neutral-border;
@@ -238,18 +248,24 @@ a {
 }
 
 // Form Inputs & Selects
-.ant-input, .ant-input-number, .ant-select-selector, .ant-picker {
+.ant-input,
+.ant-input-number,
+.ant-select-selector,
+.ant-picker {
   border-radius: $border-radius-sm !important;
   border-color: $border-color-base !important;
   padding: 8px 12px !important;
   font-size: 14px !important;
   transition: $transition-base !important;
+  height: 45px !important;
 
   &:hover {
     border-color: $primary-light !important;
   }
 
-  &:focus, &.ant-input-focused, &.ant-select-focused .ant-select-selector {
+  &:focus,
+  &.ant-input-focused,
+  &.ant-select-focused .ant-select-selector {
     border-color: $primary-color !important;
     box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
   }
@@ -286,15 +302,15 @@ a {
 }
 
 // Step & Timeline Styling (Clinical Medical Progression)
-.ant-steps-item-process > .ant-steps-item-container > .ant-steps-item-icon {
+.ant-steps-item-process>.ant-steps-item-container>.ant-steps-item-icon {
   background-color: $primary-color !important;
   border-color: $primary-color !important;
 }
 
-.ant-steps-item-finish > .ant-steps-item-container > .ant-steps-item-icon {
+.ant-steps-item-finish>.ant-steps-item-container>.ant-steps-item-icon {
   border-color: $status-success !important;
 
-  > .ant-steps-icon {
+  >.ant-steps-icon {
     color: $status-success !important;
   }
 }
@@ -304,11 +320,30 @@ a {
 }
 
 // Utility Classes
-.text-ocean { color: $primary-color !important; }
-.text-sky { color: $secondary-color !important; }
-.text-success { color: $status-success !important; }
-.text-warning { color: $status-warning !important; }
-.text-danger { color: $status-danger !important; }
-.bg-ocean-light { background-color: $bg-light !important; }
-.shadow-ocean { box-shadow: $shadow-card !important; }
+.text-ocean {
+  color: $primary-color !important;
+}
 
+.text-sky {
+  color: $secondary-color !important;
+}
+
+.text-success {
+  color: $status-success !important;
+}
+
+.text-warning {
+  color: $status-warning !important;
+}
+
+.text-danger {
+  color: $status-danger !important;
+}
+
+.bg-ocean-light {
+  background-color: $bg-light !important;
+}
+
+.shadow-ocean {
+  box-shadow: $shadow-card !important;
+}

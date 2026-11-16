@@ -256,41 +256,44 @@ export class LoginComponent {
 
     const { username, password } = this.loginForm.value;
     this.authService.login({ username, password }).subscribe({
-      next: () => {
-        this.isLoading.set(false);
-        this.message.success('Đăng nhập thành công!');
-
-        const defaultRoute = this.authService.getDefaultRouteForRole();
-        const rawReturnUrl = this.route.snapshot.queryParams['returnUrl'];
-        let targetRoute = defaultRoute;
-
-        if (
-          rawReturnUrl &&
-          rawReturnUrl !== '/' &&
-          !rawReturnUrl.includes('/auth/') &&
-          rawReturnUrl !== '/unauthorized'
-        ) {
-          const role = this.authService.userRole();
-          // If returnUrl was defaulted to /patient/booking but user is an ADMIN or DOCTOR,
-          // prioritize directing them to their own role's Dashboard
-          if (role === 'ADMIN') {
-            targetRoute = rawReturnUrl.startsWith('/patient/booking') ? defaultRoute : rawReturnUrl;
-          } else if (role === 'DOCTOR') {
-            targetRoute =
-              rawReturnUrl.startsWith('/doctor/') || rawReturnUrl === '/profile'
-                ? rawReturnUrl
-                : defaultRoute;
-          } else if (role === 'PATIENT') {
-            targetRoute =
-              rawReturnUrl.startsWith('/patient/') || rawReturnUrl === '/profile'
-                ? rawReturnUrl
-                : defaultRoute;
+      next: (res) => {
+        if (res.success) {
+          this.authService.setTokens(res.data.accessToken, res.data.refreshToken);
+          console.log(this.authService.getAccessToken(), 'token khi set vao local');
+          this.isLoading.set(false);
+          this.message.success('Đăng nhập thành công!');
+          const defaultRoute = this.authService.getDefaultRouteForRole();
+          const rawReturnUrl = this.route.snapshot.queryParams['returnUrl'];
+          let targetRoute = defaultRoute;
+          if (
+            rawReturnUrl &&
+            rawReturnUrl !== '/' &&
+            !rawReturnUrl.includes('/auth/') &&
+            rawReturnUrl !== '/unauthorized'
+          ) {
+            const role = this.authService.userRole();
+            // If returnUrl was defaulted to /patient/booking but user is an ADMIN or DOCTOR,
+            // prioritize directing them to their own role's Dashboard
+            if (role === 'ADMIN') {
+              targetRoute = rawReturnUrl.startsWith('/patient/booking') ? defaultRoute : rawReturnUrl;
+            } else if (role === 'DOCTOR') {
+              targetRoute =
+                rawReturnUrl.startsWith('/doctor/') || rawReturnUrl === '/profile'
+                  ? rawReturnUrl
+                  : defaultRoute;
+            } else if (role === 'PATIENT') {
+              targetRoute =
+                rawReturnUrl.startsWith('/patient/') || rawReturnUrl === '/profile'
+                  ? rawReturnUrl
+                  : defaultRoute;
+            }
           }
+
+          this.router.navigateByUrl(targetRoute).catch(() => {
+            this.router.navigate([defaultRoute]);
+          });
         }
 
-        this.router.navigateByUrl(targetRoute).catch(() => {
-          this.router.navigate([defaultRoute]);
-        });
       },
       error: err => {
         this.isLoading.set(false);

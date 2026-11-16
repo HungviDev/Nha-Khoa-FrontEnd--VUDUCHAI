@@ -11,7 +11,7 @@ export const roleGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
   const notification = inject(NzNotificationService);
-
+  console.log(authService.getAccessToken(), 'token trong role guard');
   // If not logged in, redirect to login
   if (!authService.getAccessToken()) {
     const isDefault = !state.url || state.url === '/' || state.url === '/patient/booking';
