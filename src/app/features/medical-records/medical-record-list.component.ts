@@ -4,6 +4,7 @@
 
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
 // Ng-Zorro Modules
@@ -19,12 +20,16 @@ import { NzAvatarModule } from 'ng-zorro-antd/avatar';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
+import { NzStepsModule } from 'ng-zorro-antd/steps';
+import { NzTimelineModule } from 'ng-zorro-antd/timeline';
+import { NzSpinModule } from 'ng-zorro-antd/spin';
 
 import { MedicalRecordService } from '../../core/services/medical-record.service';
 import { DoctorService } from '../../core/services/doctor.service';
 import { UserService } from '../../core/services/user.service';
 import { DentalServiceService } from '../../core/services/dental-service.service';
 import { TreatmentRouteService } from '../../core/services/treatment-route.service';
+import { TreatmentStageService } from '../../core/services/treatment-stage.service';
 import { AuthService } from '../../core/services/auth.service';
 import {
   DentalService,
@@ -32,6 +37,8 @@ import {
   MedicalRecord,
   MedicalRecordCreateRequest,
   TreatmentRoute,
+  TreatmentStage,
+  TreatmentStageStatus,
   User
 } from '../../core/models/dental.models';
 
@@ -40,6 +47,7 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     FormsModule,
     ReactiveFormsModule,
     NzTableModule,
@@ -52,7 +60,10 @@ import {
     NzSelectModule,
     NzAvatarModule,
     NzPopconfirmModule,
-    NzToolTipModule
+    NzToolTipModule,
+    NzStepsModule,
+    NzTimelineModule,
+    NzSpinModule
   ],
   templateUrl: './medical-record-list.component.html',
   styleUrls: ['./medical-record-list.component.scss']
@@ -64,8 +75,11 @@ export class MedicalRecordListComponent implements OnInit {
   private readonly userService = inject(UserService);
   private readonly dentalService = inject(DentalServiceService);
   private readonly routeService = inject(TreatmentRouteService);
+  private readonly stageService = inject(TreatmentStageService);
   readonly authService = inject(AuthService);
   private readonly message = inject(NzMessageService);
+
+  readonly TreatmentStageStatus = TreatmentStageStatus;
 
   readonly currentUser = this.authService.currentUser;
   readonly userRole = this.authService.userRole;
@@ -89,6 +103,18 @@ export class MedicalRecordListComponent implements OnInit {
   readonly isCreateModalVisible = signal<boolean>(false);
   readonly isDetailModalVisible = signal<boolean>(false);
   readonly selectedRecord = signal<MedicalRecord | null>(null);
+
+  // Assign Treatment Route State
+  readonly isAssignRouteModalVisible = signal<boolean>(false);
+  readonly targetRecordForAssign = signal<MedicalRecord | null>(null);
+  readonly selectedRouteIdToAssign = signal<number | null>(null);
+  readonly isAssigningRoute = signal<boolean>(false);
+
+  // Treatment Stages Progression Modal State
+  readonly isStagesModalVisible = signal<boolean>(false);
+  readonly activeRecordForStages = signal<MedicalRecord | null>(null);
+  readonly stagesForActiveRecord = signal<TreatmentStage[]>([]);
+  readonly isLoadingStages = signal<boolean>(false);
 
   recordForm: FormGroup = this.fb.group({
     userId: [null, [Validators.required]],
@@ -259,6 +285,103 @@ export class MedicalRecordListComponent implements OnInit {
         this.message.error(msg);
       }
     });
+  }
+
+  // ----------------------------------------------------------------------------
+  // ASSIGN TREATMENT ROUTE (ONLY WHEN ROUTE IS NULL)
+  // ----------------------------------------------------------------------------
+
+  openAssignRouteModal(record: MedicalRecord): void {
+    if (record.treatmentRouteId || record.treatmentRoute) {
+      this.message.warning('Bệnh án này đã có lộ trình điều trị, không thể chọn lại!');
+      return;
+    }
+    this.targetRecordForAssign.set(record);
+    this.selectedRouteIdToAssign.set(null);
+    this.isAssignRouteModalVisible.set(true);
+  }
+
+  submitAssignRoute(): void {
+    const record = this.targetRecordForAssign();
+    const routeId = this.selectedRouteIdToAssign();
+    if (!record) return;
+    if (!routeId) {
+      this.message.warning('Vui lòng chọn một phác đồ điều trị!');
+      return;
+    }
+
+    this.isAssigningRoute.set(true);
+    this.medicalRecordService
+      .updateMedicalRecord(record.id, { treatmentRouteId: routeId })
+      .subscribe({
+        next: () => {
+          this.message.success('Gán lộ trình điều trị cho bệnh án thành công!');
+          this.isAssignRouteModalVisible.set(false);
+          this.isAssigningRoute.set(false);
+          this.loadRecords();
+        },
+        error: err => {
+          const msg = err.error?.message || 'Không thể gán lộ trình điều trị.';
+          this.message.error(msg);
+          this.isAssigningRoute.set(false);
+        }
+      });
+  }
+
+  // ----------------------------------------------------------------------------
+  // TREATMENT STAGES TRACKING & TRANSITIONS
+  // ----------------------------------------------------------------------------
+
+  openStagesModal(record: MedicalRecord): void {
+    const routeId = record.treatmentRoute?.id || record.treatmentRouteId;
+    if (!routeId) {
+      this.message.warning('Hồ sơ bệnh án này chưa được gán lộ trình điều trị.');
+      return;
+    }
+
+    this.activeRecordForStages.set(record);
+    this.isStagesModalVisible.set(true);
+    this.loadStagesForActiveRecord(routeId);
+  }
+
+  loadStagesForActiveRecord(routeId: number): void {
+    this.isLoadingStages.set(true);
+    this.stageService.getStagesByRouteId(routeId).subscribe({
+      next: res => {
+        this.stagesForActiveRecord.set(res.data || []);
+        this.isLoadingStages.set(false);
+      },
+      error: () => {
+        this.message.error('Không thể tải các bước giai đoạn của lộ trình.');
+        this.isLoadingStages.set(false);
+      }
+    });
+  }
+
+  updateStageStatus(stage: TreatmentStage, newStatus: TreatmentStageStatus): void {
+    this.stageService.updateStageStatus(stage.id, newStatus).subscribe({
+      next: () => {
+        this.message.success(`Đã chuyển trạng thái bước "${stage.stageName}" sang: ${newStatus}`);
+        const rec = this.activeRecordForStages();
+        const routeId = rec?.treatmentRoute?.id || rec?.treatmentRouteId;
+        if (routeId) {
+          this.loadStagesForActiveRecord(routeId);
+        }
+      },
+      error: err => {
+        const msg = err.error?.message || 'Không thể cập nhật trạng thái bước điều trị.';
+        this.message.error(msg);
+      }
+    });
+  }
+
+  getStageActiveStep(stages: TreatmentStage[]): number {
+    if (!stages || stages.length === 0) return 0;
+    const inProgressIndex = stages.findIndex(s => s.status === TreatmentStageStatus.IN_PROGRESS);
+    if (inProgressIndex !== -1) return inProgressIndex;
+    const pendingIndex = stages.findIndex(s => s.status === TreatmentStageStatus.PENDING);
+    if (pendingIndex !== -1) return pendingIndex;
+    return stages.length - 1;
   }
 }
 

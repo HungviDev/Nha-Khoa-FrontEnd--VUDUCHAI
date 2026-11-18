@@ -5,7 +5,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
 // Ng-Zorro Modules
 import { NzStepsModule } from 'ng-zorro-antd/steps';
@@ -40,6 +40,7 @@ import {
   imports: [
     CommonModule,
     RouterModule,
+    FormsModule,
     ReactiveFormsModule,
     NzStepsModule,
     NzTimelineModule,
@@ -75,6 +76,7 @@ export class TreatmentRouteDetailComponent implements OnInit {
   });
 
   // Clinical Data Signals
+  readonly allRoutes = signal<TreatmentRoute[]>([]);
   readonly routeId = signal<number>(1);
   readonly treatmentRoute = signal<TreatmentRoute | null>(null);
   readonly stages = signal<TreatmentStage[]>([]);
@@ -96,16 +98,28 @@ export class TreatmentRouteDetailComponent implements OnInit {
     return this.stages().reduce((acc, stage) => acc + (stage.cost || 0), 0);
   });
 
+  readonly completedTreatmentCost = computed<number>(() => {
+    return this.stages()
+      .filter(s => s.status === TreatmentStageStatus.COMPLETED)
+      .reduce((acc, stage) => acc + (stage.cost || 0), 0);
+  });
+
   readonly totalDelayDays = computed<number>(() => {
     return this.stages().reduce((acc, stage) => acc + (stage.delay || 0), 0);
   });
 
   // Modals Visibility
+  readonly isCreateRouteModalVisible = signal<boolean>(false);
   readonly isCreateStageModalVisible = signal<boolean>(false);
   readonly isEditStageModalVisible = signal<boolean>(false);
   readonly currentSelectedStage = signal<TreatmentStage | null>(null);
 
   // Forms
+  routeForm: FormGroup = this.fb.group({
+    title: ['', [Validators.required, Validators.maxLength(150)]],
+    description: ['']
+  });
+
   stageForm: FormGroup = this.fb.group({
     stageName: ['', [Validators.required, Validators.maxLength(150)]],
     sequenceOrder: [1, [Validators.required, Validators.min(1)]],
@@ -120,6 +134,7 @@ export class TreatmentRouteDetailComponent implements OnInit {
     const parsedId = idParam ? parseInt(idParam, 10) : 1;
     this.routeId.set(parsedId);
 
+    this.loadAllRoutes();
     this.loadRouteDetails();
     this.loadStages();
   }
@@ -127,6 +142,63 @@ export class TreatmentRouteDetailComponent implements OnInit {
   // ----------------------------------------------------------------------------
   // DATA LOADING
   // ----------------------------------------------------------------------------
+
+  loadAllRoutes(): void {
+    this.routeService.getRoutes({ size: 100, sortBy: 'id', sortDir: 'asc' }).subscribe({
+      next: res => {
+        if (res.success && res.data && res.data.items.length > 0) {
+          this.allRoutes.set(res.data.items);
+          const hasCurrent = this.allRoutes().some(r => r.id === this.routeId());
+          if (!hasCurrent) {
+            this.selectRoute(this.allRoutes()[0].id);
+          }
+        }
+      }
+    });
+  }
+
+  selectRoute(id: number): void {
+    this.routeId.set(id);
+    this.loadRouteDetails();
+    this.loadStages();
+  }
+
+  openCreateRouteModal(): void {
+    this.routeForm.reset({ title: '', description: '' });
+    this.isCreateRouteModalVisible.set(true);
+  }
+
+  submitCreateRoute(): void {
+    if (this.routeForm.invalid) {
+      this.routeForm.markAllAsTouched();
+      return;
+    }
+    const val = this.routeForm.value;
+    this.routeService.createRoute({ title: val.title, description: val.description }).subscribe({
+      next: res => {
+        this.message.success('Tạo lộ trình điều trị mới thành công!');
+        this.isCreateRouteModalVisible.set(false);
+        this.loadAllRoutes();
+        if (res.data) {
+          this.selectRoute(res.data.id);
+        }
+      },
+      error: err => {
+        this.message.error(err.error?.message || 'Lỗi khi tạo lộ trình.');
+      }
+    });
+  }
+
+  deleteCurrentRoute(): void {
+    const currentId = this.routeId();
+    this.routeService.deleteRoute(currentId).subscribe({
+      next: () => {
+        this.message.success('Đã xóa lộ trình điều trị thành công.');
+        this.loadAllRoutes();
+      },
+      error: () => this.message.error('Không thể xóa lộ trình này.')
+    });
+  }
 
   loadRouteDetails(): void {
     this.routeService.getRouteById(this.routeId()).subscribe({

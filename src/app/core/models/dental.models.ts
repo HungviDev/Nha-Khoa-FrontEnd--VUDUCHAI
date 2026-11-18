@@ -153,6 +153,8 @@ export interface MedicalRecord {
   service?: DentalService;
   treatmentRouteId?: number;
   treatmentRoute?: TreatmentRoute;
+  appointmentId?: number;
+  appointment?: Appointment;
   diagnosis: string;
   createdAt?: string;
 }
@@ -161,12 +163,68 @@ export interface Payment {
   id: number;
   userId: number;
   user?: User;
+  treatmentRouteId?: number;
+  treatmentRouteTitle?: string;
   amount: number;
   method: PaymentMethod;
   status: PaymentStatus;
   createdAt?: string;
   treatmentStageId?: number;
   treatmentStage?: TreatmentStage;
+}
+
+export interface StageFinancialDetail {
+  stageId: number;
+  stageName: string;
+  sequenceOrder: number;
+  status: TreatmentStageStatus;
+  cost: number;
+  delay?: number;
+  appointmentDate?: string;
+  note?: string;
+  isCompleted: boolean;
+  isInvoiced: boolean;
+  paymentId?: number;
+}
+
+export interface RouteFinancialStatistics {
+  routeId: number;
+  routeTitle: string;
+  routeDescription?: string;
+  totalStages: number;
+  completedStages: number;
+  inProgressStages: number;
+  pendingStages: number;
+  totalEstimatedCost: number;
+  completedCost: number;
+  pendingCost: number;
+  totalInvoicedAmount: number;
+  totalPaidAmount: number;
+  remainingUnpaidAmount: number;
+  stages: StageFinancialDetail[];
+}
+
+export interface AppointmentInvoicePreview {
+  appointmentId: number;
+  userId: number;
+  patientName: string;
+  patientPhone?: string;
+  doctorName?: string;
+  serviceName?: string;
+  servicePrice?: number;
+  treatmentRouteId?: number;
+  treatmentRouteTitle?: string;
+  completedStages: StageFinancialDetail[];
+  completedStagesTotalCost: number;
+  totalCalculatedAmount: number;
+  alreadyInvoiced: boolean;
+  existingPayment?: Payment;
+}
+
+export interface CreateAppointmentInvoiceRequest {
+  method: PaymentMethod;
+  customAmount?: number;
+  treatmentStageId?: number;
 }
 
 export interface AuthResponse {
@@ -263,6 +321,8 @@ export interface AppointmentUpdateRequest {
 export interface AppointmentStatusUpdateRequest {
   status: AppointmentStatus;
   note?: string;
+  diagnosis?: string;
+  treatmentRouteId?: number;
 }
 
 export interface AppointmentFilterParams extends PageParams {
@@ -307,6 +367,7 @@ export interface MedicalRecordCreateRequest {
   doctorId: number;
   serviceId: number;
   treatmentRouteId?: number;
+  appointmentId?: number;
   diagnosis: string;
 }
 

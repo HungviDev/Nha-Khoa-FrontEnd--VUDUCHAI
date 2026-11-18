@@ -4,6 +4,7 @@
 
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
 // Ng-Zorro Modules
@@ -40,6 +41,7 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     FormsModule,
     ReactiveFormsModule,
     NzTableModule,
@@ -101,7 +103,8 @@ export class AppointmentManagementComponent implements OnInit {
 
   statusForm: FormGroup = this.fb.group({
     status: ['', [Validators.required]],
-    note: ['']
+    note: [''],
+    diagnosis: ['']
   });
 
   bookingForm: FormGroup = this.fb.group({
@@ -206,7 +209,8 @@ export class AppointmentManagementComponent implements OnInit {
     this.currentSelectedAppointment.set(appointment);
     this.statusForm.reset({
       status: appointment.status,
-      note: appointment.note || ''
+      note: appointment.note || '',
+      diagnosis: ''
     });
     this.isStatusModalVisible.set(true);
   }

@@ -68,7 +68,14 @@
       <tbody>
         @for (item of recordTable.data; track item.id) {
           <tr>
-            <td><strong class="text-ocean">#{{ item.id }}</strong></td>
+            <td>
+              <strong class="text-ocean">#{{ item.id }}</strong>
+              @if (item.appointmentId) {
+                <div class="mt-1">
+                  <nz-tag nzColor="blue" nzSize="small">Lịch #{{ item.appointmentId }}</nz-tag>
+                </div>
+              }
+            </td>
             <td>
               <div class="patient-cell">
                 <span class="patient-name">{{ item.user?.fullname || 'Bệnh nhân #' + item.userId }}</span>
@@ -91,9 +98,54 @@
             </td>
             <td>
               @if (item.treatmentRoute) {
-                <nz-tag nzColor="cyan">{{ item.treatmentRoute.title }}</nz-tag>
+                <div class="route-cell">
+                  <nz-tag nzColor="cyan" class="route-tag">
+                    <span nz-icon nzType="branches"></span>
+                    {{ item.treatmentRoute.title }}
+                  </nz-tag>
+                  <button
+                    nz-button
+                    nzType="link"
+                    nzSize="small"
+                    class="btn-stages-step"
+                    (click)="openStagesModal(item)"
+                  >
+                    <span nz-icon nzType="step-forward"></span>
+                    <span>Xem & Chuyển bước</span>
+                  </button>
+                </div>
+              } @else if (item.treatmentRouteId) {
+                <div class="route-cell">
+                  <nz-tag nzColor="cyan" class="route-tag">
+                    <span nz-icon nzType="branches"></span>
+                    Phác đồ #{{ item.treatmentRouteId }}
+                  </nz-tag>
+                  <button
+                    nz-button
+                    nzType="link"
+                    nzSize="small"
+                    class="btn-stages-step"
+                    (click)="openStagesModal(item)"
+                  >
+                    <span nz-icon nzType="step-forward"></span>
+                    <span>Xem & Chuyển bước</span>
+                  </button>
+                </div>
               } @else {
-                <span class="text-muted">Không có</span>
+                @if (isDoctorOrAdmin()) {
+                  <button
+                    nz-button
+                    nzType="dashed"
+                    nzSize="small"
+                    class="btn-choose-route"
+                    (click)="openAssignRouteModal(item)"
+                  >
+                    <span nz-icon nzType="plus"></span>
+                    <span>Chọn lộ trình điều trị</span>
+                  </button>
+                } @else {
+                  <span class="text-muted">Chưa chỉ định</span>
+                }
               }
             </td>
             <td>
@@ -101,6 +153,20 @@
             </td>
             <td nzAlign="center">
               <div class="action-buttons">
+                @if (item.treatmentRoute || item.treatmentRouteId) {
+                  <button
+                    nz-button
+                    nzType="text"
+                    nzSize="small"
+                    class="btn-stages"
+                    (click)="openStagesModal(item)"
+                    nz-tooltip
+                    nzTooltipTitle="Theo dõi & Chuyển bước điều trị"
+                  >
+                    <span nz-icon nzType="branches" class="text-ocean"></span>
+                  </button>
+                }
+
                 <button
                   nz-button
                   nzType="text"
@@ -260,4 +326,225 @@
     }
   </ng-container>
 </nz-modal>
+
+<!-- ======================================================================== -->
+<!-- MODAL: GÁN LỘ TRÌNH ĐIỀU TRỊ (CHỈ KHI TREATMENT_ROUTE_ID LÀ NULL)         -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isAssignRouteModalVisible()"
+  nzTitle="Chỉ Định & Gán Lộ Trình Điều Trị"
+  (nzOnCancel)="isAssignRouteModalVisible.set(false)"
+  (nzOnOk)="submitAssignRoute()"
+  [nzOkLoading]="isAssigningRoute()"
+  nzOkText="Xác nhận gán lộ trình"
+  nzCancelText="Hủy"
+  [nzWidth]="540"
+>
+  <ng-container *nzModalContent>
+    @if (targetRecordForAssign(); as rec) {
+      <div class="assign-route-modal-body">
+        <div class="record-summary-banner">
+          <div class="summary-row">
+            <span class="label">Bệnh nhân:</span>
+            <strong>{{ rec.user?.fullname || 'Bệnh nhân #' + rec.userId }}</strong>
+          </div>
+          <div class="summary-row">
+            <span class="label">Dịch vụ:</span>
+            <span>{{ rec.service?.name }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Chẩn đoán:</span>
+            <span class="text-ocean">{{ rec.diagnosis }}</span>
+          </div>
+        </div>
+
+        <div class="route-select-wrapper mt-4">
+          <label class="form-label font-semibold mb-2 block">
+            <span nz-icon nzType="branches" class="text-ocean mr-1"></span>
+            Lựa chọn phác đồ điều trị phù hợp:
+          </label>
+          <nz-select
+            [ngModel]="selectedRouteIdToAssign()"
+            (ngModelChange)="selectedRouteIdToAssign.set($event)"
+            class="w-full"
+            nzPlaceHolder="Chọn phác đồ điều trị từ danh mục"
+          >
+            @for (r of routes(); track r.id) {
+              <nz-option [nzValue]="r.id" [nzLabel]="'#' + r.id + ' - ' + r.title"></nz-option>
+            }
+          </nz-select>
+          <p class="text-muted text-xs mt-2">
+            * Sau khi gán phác đồ, hệ thống sẽ cố định lộ trình này vào bệnh án và cho phép theo dõi, cập nhật tiến độ các bước (stages) điều trị tiếp theo.
+          </p>
+        </div>
+      </div>
+    }
+  </ng-container>
+</nz-modal>
+
+<!-- ======================================================================== -->
+<!-- MODAL: TIẾN ĐỘ & CHUYỂN BƯỚC ĐIỀU TRỊ (TREATMENT STAGES PROGRESSION)       -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isStagesModalVisible()"
+  [nzTitle]="stagesModalTitle"
+  (nzOnCancel)="isStagesModalVisible.set(false)"
+  [nzFooter]="null"
+  [nzWidth]="850"
+>
+  <ng-template #stagesModalTitle>
+    <div class="stages-modal-title">
+      <span nz-icon nzType="branches" class="text-ocean"></span>
+      <span>Tiến Độ & Chuyển Bước Điều Trị Theo Phác Đồ</span>
+    </div>
+  </ng-template>
+
+  <ng-container *nzModalContent>
+    @if (activeRecordForStages(); as rec) {
+      <div class="stages-modal-content">
+        <!-- Record Header Context Strip -->
+        <div class="record-meta-bar">
+          <div class="meta-item">
+            <span class="meta-label">Bệnh nhân:</span>
+            <strong>{{ rec.user?.fullname }}</strong>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Bác sĩ phụ trách:</span>
+            <strong>{{ rec.doctor?.user?.fullname || 'Chưa chỉ định' }}</strong>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Phác đồ áp dụng:</span>
+            <nz-tag nzColor="cyan">
+              <span nz-icon nzType="branches"></span>
+              {{ rec.treatmentRoute?.title || ('Lộ trình #' + rec.treatmentRouteId) }}
+            </nz-tag>
+          </div>
+        </div>
+
+        <!-- Sequential Stepper Visualizer -->
+        @if (stagesForActiveRecord().length > 0) {
+          <div class="modal-stepper-box">
+            <nz-steps [nzCurrent]="getStageActiveStep(stagesForActiveRecord())" nzSize="small">
+              @for (st of stagesForActiveRecord(); track st.id) {
+                <nz-step
+                  [nzTitle]="'Bước ' + st.sequenceOrder"
+                  [nzSubtitle]="st.stageName"
+                  [nzStatus]="st.status === 'COMPLETED' ? 'finish' : st.status === 'IN_PROGRESS' ? 'process' : 'wait'"
+                ></nz-step>
+              }
+            </nz-steps>
+          </div>
+        }
+
+        <!-- Stages List with Status Transition Action Buttons -->
+        <div class="stages-transition-list">
+          @if (isLoadingStages()) {
+            <div class="text-center py-8">
+              <span nz-icon nzType="loading" nzTheme="outline" class="text-ocean text-3xl"></span>
+              <p class="text-muted mt-2">Đang tải chi tiết các bước điều trị...</p>
+            </div>
+          } @else if (stagesForActiveRecord().length === 0) {
+            <div class="empty-stages-box text-center py-8">
+              <span nz-icon nzType="info-circle" class="text-3xl text-warning"></span>
+              <p class="text-muted mt-2">Phác đồ này hiện chưa có các bước (stages) điều trị nào.</p>
+              @if (isDoctorOrAdmin()) {
+                <a
+                  [routerLink]="['/doctor/treatments', rec.treatmentRoute?.id || rec.treatmentRouteId]"
+                  (click)="isStagesModalVisible.set(false)"
+                  class="text-ocean font-medium"
+                >
+                  <span nz-icon nzType="plus-circle"></span> Đến trang Phác đồ để thiết lập các bước điều trị
+                </a>
+              }
+            </div>
+          } @else {
+            @for (stage of stagesForActiveRecord(); track stage.id) {
+              <div class="stage-transition-card" [class.is-current]="stage.status === 'IN_PROGRESS'">
+                <div class="stage-main-info">
+                  <div class="stage-header-line">
+                    <span class="seq-badge">Bước {{ stage.sequenceOrder }}</span>
+                    @switch (stage.status) {
+                      @case ('COMPLETED') {
+                        <nz-tag nzColor="success"><span nz-icon nzType="check-circle"></span> Đã hoàn thành</nz-tag>
+                      }
+                      @case ('IN_PROGRESS') {
+                        <nz-tag nzColor="processing"><span nz-icon nzType="sync" nzSpin></span> Đang tiến hành</nz-tag>
+                      }
+                      @case ('PENDING') {
+                        <nz-tag nzColor="default"><span nz-icon nzType="clock-circle"></span> Chờ đến lịch</nz-tag>
+                      }
+                      @case ('CANCELLED') {
+                        <nz-tag nzColor="error">Đã hủy</nz-tag>
+                      }
+                    }
+                  </div>
+
+                  <h4 class="stage-name">{{ stage.stageName }}</h4>
+
+                  <div class="stage-sub-info">
+                    <span><span nz-icon nzType="dollar"></span> Chi phí: <strong>{{ stage.cost | number }} đ</strong></span>
+                    <span><span nz-icon nzType="calendar"></span> Lịch hẹn: {{ stage.appointmentDate || 'Chưa xếp lịch' }}</span>
+                    <span><span nz-icon nzType="hourglass"></span> Thời gian chờ: {{ stage.delay }} ngày</span>
+                  </div>
+
+                  @if (stage.note) {
+                    <p class="stage-note">
+                      <span nz-icon nzType="file-text"></span> Ghi chú: {{ stage.note }}
+                    </p>
+                  }
+                </div>
+
+                <!-- Status Transition Action Buttons for Doctor/Admin -->
+                @if (isDoctorOrAdmin()) {
+                  <div class="stage-transition-actions">
+                    @if (stage.status === 'PENDING') {
+                      <button
+                        nz-button
+                        nzType="primary"
+                        nzSize="small"
+                        class="btn-start-stage"
+                        (click)="updateStageStatus(stage, TreatmentStageStatus.IN_PROGRESS)"
+                      >
+                        <span nz-icon nzType="play-circle"></span>
+                        <span>Bắt đầu bước này</span>
+                      </button>
+                    }
+
+                    @if (stage.status === 'IN_PROGRESS') {
+                      <button
+                        nz-button
+                        nzType="primary"
+                        nzSize="small"
+                        class="btn-finish-stage"
+                        (click)="updateStageStatus(stage, TreatmentStageStatus.COMPLETED)"
+                      >
+                        <span nz-icon nzType="check-circle"></span>
+                        <span>Hoàn tất bước này</span>
+                      </button>
+                    }
+
+                    @if (stage.status === 'COMPLETED') {
+                      <button
+                        nz-button
+                        nzType="text"
+                        nzSize="small"
+                        (click)="updateStageStatus(stage, TreatmentStageStatus.IN_PROGRESS)"
+                        nz-tooltip
+                        nzTooltipTitle="Chuyển lại trạng thái Đang tiến hành"
+                      >
+                        <span nz-icon nzType="undo"></span>
+                        <span>Mở lại bước</span>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      </div>
+    }
+  </ng-container>
+</nz-modal>
+
 

@@ -146,6 +146,20 @@
             <!-- Actions -->
             <td nzAlign="center">
               <div class="action-buttons">
+                @if (data.status === 'COMPLETED' && canChangeStatus()) {
+                  <a
+                    [routerLink]="['/admin/payments']"
+                    nz-button
+                    nzType="text"
+                    nzSize="small"
+                    class="btn-action"
+                    nz-tooltip
+                    nzTooltipTitle="Xuất / Xem Hóa Đơn Cuộc Hẹn"
+                  >
+                    <span nz-icon nzType="file-text" class="text-ocean font-bold"></span>
+                  </a>
+                }
+
                 @if (canChangeStatus() && data.status !== 'CANCELLED' && data.status !== 'COMPLETED') {
                   <button
                     nz-button
@@ -219,11 +233,25 @@
           <textarea
             nz-input
             formControlName="note"
-            rows="3"
+            rows="2"
             placeholder="Nhập ghi chú hoặc lý do chuyển trạng thái..."
           ></textarea>
         </nz-form-control>
       </nz-form-item>
+
+      @if (statusForm.get('status')?.value === 'COMPLETED') {
+        <nz-form-item>
+          <nz-form-label nzRequired>Chẩn đoán bệnh án lâm sàng (Tự động lưu vào Bệnh án)</nz-form-label>
+          <nz-form-control nzErrorTip="Vui lòng nhập chẩn đoán của bác sĩ!">
+            <textarea
+              nz-input
+              formControlName="diagnosis"
+              rows="3"
+              placeholder="Nhập chẩn đoán lâm sàng, kết quả khám hoặc chỉ định điều trị để lưu vào hồ sơ bệnh án..."
+            ></textarea>
+          </nz-form-control>
+        </nz-form-item>
+      }
     </form>
   </ng-container>
 </nz-modal>

@@ -28,9 +28,19 @@
         <nz-option nzValue="FAILED" nzLabel="Thất bại (FAILED)"></nz-option>
       </nz-select>
 
-      <button nz-button nzType="primary" (click)="openCreateModal()" class="btn-create">
+      <button nz-button nzType="default" (click)="openRouteStatsModal()" class="btn-route-stats">
+        <span nz-icon nzType="fund"></span>
+        <span>Thống kê theo lộ trình</span>
+      </button>
+
+      <button nz-button nzType="primary" (click)="openCreateAppointmentInvoiceModal()" class="btn-create-appt-inv">
+        <span nz-icon nzType="file-add"></span>
+        <span>Tạo HĐ theo cuộc hẹn</span>
+      </button>
+
+      <button nz-button nzType="default" (click)="openCreateModal()" class="btn-create">
         <span nz-icon nzType="plus"></span>
-        <span>Khởi tạo thanh toán</span>
+        <span>Khởi tạo tự do</span>
       </button>
 
       <button nz-button nzType="default" (click)="loadPayments()" [nzLoading]="isLoading()" title="Làm mới">
@@ -57,25 +67,39 @@
     >
       <thead>
         <tr>
-          <th nzWidth="80px">Mã HĐ</th>
+          <th nzWidth="100px">Mã HĐ</th>
           <th>Bệnh nhân</th>
+          <th>Phác đồ điều trị</th>
           <th>Số tiền thanh toán</th>
           <th>Phương thức</th>
           <th>Trạng thái</th>
           <th>Thời gian tạo</th>
           @if (isAdmin()) {
-            <th nzWidth="150px" nzAlign="center">Đối soát</th>
+            <th nzWidth="130px" nzAlign="center">Đối soát</th>
           }
         </tr>
       </thead>
       <tbody>
         @for (item of payTable.data; track item.id) {
           <tr>
-            <td><strong class="text-ocean">#{{ item.id }}</strong></td>
+            <td>
+              <strong class="text-ocean font-mono">#{{ item.id }}</strong>
+            </td>
             <td>
               <div class="patient-cell">
                 <span class="patient-name">{{ item.user?.fullname || 'Bệnh nhân #' + item.userId }}</span>
                 <span class="patient-sub">{{ item.user?.phone }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="meta-tags-cell">
+                @if (item.treatmentRouteTitle) {
+                  <nz-tag nzColor="cyan">{{ item.treatmentRouteTitle }}</nz-tag>
+                } @else if (item.treatmentStage) {
+                  <nz-tag nzColor="cyan">{{ item.treatmentStage.stageName }}</nz-tag>
+                } @else {
+                  <span class="text-muted text-xs">Dịch vụ vãng lai</span>
+                }
               </div>
             </td>
             <td>
@@ -84,7 +108,7 @@
               </strong>
             </td>
             <td>
-              <nz-tag nzColor="blue">{{ item.method }}</nz-tag>
+              <nz-tag nzColor="purple">{{ item.method }}</nz-tag>
             </td>
             <td>
               <span class="status-badge" [ngClass]="getStatusBadgeClass(item.status)">
@@ -117,7 +141,7 @@
           </tr>
         } @empty {
           <tr>
-            <td [attr.colspan]="isAdmin() ? 7 : 6" class="text-center py-8 text-muted">
+            <td [attr.colspan]="isAdmin() ? 8 : 7" class="text-center py-8 text-muted">
               Không tìm thấy hóa đơn thanh toán nào.
             </td>
           </tr>
@@ -220,4 +244,264 @@
     </form>
   </ng-container>
 </nz-modal>
+
+<!-- ======================================================================== -->
+<!-- MODAL: THỐNG KÊ TÀI CHÍNH THEO LỘ TRÌNH ĐIỀU TRỊ                          -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isRouteStatsModalVisible()"
+  nzTitle="Thống Kê Tài Chính & Tiến Độ Tính Tiền Theo Lộ Trình Điều Trị"
+  (nzOnCancel)="isRouteStatsModalVisible.set(false)"
+  [nzFooter]="null"
+  [nzWidth]="960"
+>
+  <ng-container *nzModalContent>
+    @if (isLoadingRouteStats()) {
+      <div class="text-center py-8">
+        <span nz-icon nzType="loading" class="text-ocean text-3xl"></span>
+        <p class="text-muted mt-2">Đang tải số liệu tài chính phác đồ...</p>
+      </div>
+    } @else if (routeStats().length === 0) {
+      <div class="text-center py-8 text-muted">
+        Chưa có dữ liệu lộ trình điều trị nào trong hệ thống.
+      </div>
+    } @else {
+      <nz-tabset nzType="card" class="route-stats-tabs">
+        @for (stat of routeStats(); track stat.routeId) {
+          <nz-tab [nzTitle]="stat.routeTitle">
+            <div class="route-stat-card-body">
+              <p class="route-desc text-muted mb-4">{{ stat.routeDescription || 'Chưa có mô tả chi tiết phác đồ.' }}</p>
+
+              <!-- Metric Grid -->
+              <div class="stat-metrics-grid">
+                <div class="stat-box">
+                  <span class="stat-label">Tổng chi phí dự kiến</span>
+                  <strong class="stat-val text-primary">{{ stat.totalEstimatedCost | number }} đ</strong>
+                  <span class="stat-sub">Toàn bộ {{ stat.totalStages }} bước</span>
+                </div>
+                <div class="stat-box stat-box--completed">
+                  <span class="stat-label">Các bước ĐÃ HOÀN THÀNH</span>
+                  <strong class="stat-val text-success">{{ stat.completedCost | number }} đ</strong>
+                  <span class="stat-sub">{{ stat.completedStages }}/{{ stat.totalStages }} bước đã completed</span>
+                </div>
+                <div class="stat-box">
+                  <span class="stat-label">Đã thanh toán thực tế</span>
+                  <strong class="stat-val text-ocean">{{ stat.totalPaidAmount | number }} đ</strong>
+                  <span class="stat-sub">Trạng thái SUCCESS</span>
+                </div>
+                <div class="stat-box stat-box--warning">
+                  <span class="stat-label">Còn phải thu</span>
+                  <strong class="stat-val text-warning">{{ stat.remainingUnpaidAmount | number }} đ</strong>
+                  <span class="stat-sub">Chưa hoàn tất thanh toán</span>
+                </div>
+              </div>
+
+              <!-- Stages Breakdown Table -->
+              <h4 class="mt-6 mb-3 font-semibold text-base">
+                <span nz-icon nzType="ordered-list" class="mr-1 text-ocean"></span>
+                Chi tiết từng bước & Tiêu chí tính hóa đơn
+              </h4>
+              <nz-table #stagesTable [nzData]="stat.stages" [nzShowPagination]="false" nzSize="small" class="stages-breakdown-table">
+                <thead>
+                  <tr>
+                    <th nzWidth="70px">Thứ tự</th>
+                    <th>Tên giai đoạn</th>
+                    <th nzWidth="150px">Trạng thái</th>
+                    <th nzWidth="150px">Chi phí</th>
+                    <th nzWidth="180px">Tính vào hóa đơn</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (st of stagesTable.data; track st.stageId) {
+                    <tr [class.row-completed]="st.isCompleted">
+                      <td><strong>Bước {{ st.sequenceOrder }}</strong></td>
+                      <td>
+                        <strong>{{ st.stageName }}</strong>
+                        @if (st.note) {
+                          <div class="text-xs text-muted">{{ st.note }}</div>
+                        }
+                      </td>
+                      <td>
+                        @switch (st.status) {
+                          @case ('COMPLETED') {
+                            <nz-tag nzColor="success"><span nz-icon nzType="check-circle"></span> COMPLETED</nz-tag>
+                          }
+                          @case ('IN_PROGRESS') {
+                            <nz-tag nzColor="processing"><span nz-icon nzType="sync" nzSpin></span> IN_PROGRESS</nz-tag>
+                          }
+                          @case ('PENDING') {
+                            <nz-tag nzColor="default">PENDING</nz-tag>
+                          }
+                          @case ('CANCELLED') {
+                            <nz-tag nzColor="error">CANCELLED</nz-tag>
+                          }
+                        }
+                      </td>
+                      <td>
+                        <strong [class.text-success]="st.isCompleted">{{ st.cost | number }} đ</strong>
+                      </td>
+                      <td>
+                        @if (st.isCompleted) {
+                          <span class="text-success text-xs font-medium block">
+                            <span nz-icon nzType="check"></span> Đủ điều kiện tính HĐ
+                          </span>
+                          @if (st.isInvoiced && st.paymentId) {
+                            <nz-tag nzColor="blue" class="mt-1">HĐ #{{ st.paymentId }}</nz-tag>
+                          }
+                        } @else {
+                          <span class="text-muted text-xs">Chưa hoàn tất (chưa tính)</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </nz-table>
+            </div>
+          </nz-tab>
+        }
+      </nz-tabset>
+    }
+  </ng-container>
+</nz-modal>
+
+<!-- ======================================================================== -->
+<!-- MODAL: TẠO HÓA ĐƠN CHO CUỘC HẸN (TÍNH TỪ CÁC BƯỚC COMPLETED)               -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isApptInvoiceModalVisible()"
+  nzTitle="Khởi Tạo Hóa Đơn Cho Cuộc Hẹn Lâm Sàng"
+  (nzOnCancel)="isApptInvoiceModalVisible.set(false)"
+  (nzOnOk)="submitCreateAppointmentInvoice()"
+  [nzOkLoading]="isCreatingApptInvoice()"
+  nzOkText="Xác nhận tạo hóa đơn"
+  nzCancelText="Đóng"
+  [nzWidth]="760"
+>
+  <ng-container *nzModalContent>
+    <div class="appt-invoice-modal-content">
+      <!-- Step 1: Select Appointment -->
+      <div class="form-section mb-4">
+        <label class="form-label font-semibold block mb-2">
+          <span nz-icon nzType="calendar" class="text-ocean mr-1"></span>
+          Chọn cuộc hẹn cần xuất hóa đơn:
+        </label>
+        <nz-select
+          [ngModel]="selectedApptId()"
+          (ngModelChange)="onSelectAppointmentForInvoice($event)"
+          class="w-full"
+          nzPlaceHolder="Chọn cuộc hẹn thăm khám từ danh sách"
+          nzShowSearch
+        >
+          @for (a of appointmentsList(); track a.id) {
+            <nz-option
+              [nzValue]="a.id"
+              [nzLabel]="'Lịch #' + a.id + ' - ' + (a.user?.fullname || 'BN') + ' - ' + a.appointmentDate + ' (' + a.status + ')'"
+            ></nz-option>
+          }
+        </nz-select>
+      </div>
+
+      <!-- Step 2: Live Preview Calculation -->
+      @if (isLoadingPreview()) {
+        <div class="text-center py-6">
+          <span nz-icon nzType="loading" class="text-ocean text-2xl"></span>
+          <p class="text-muted mt-2">Đang kiểm tra phác đồ và các bước đã hoàn thành...</p>
+        </div>
+      } @else {
+        @if (invoicePreview(); as prev) {
+          <div class="invoice-preview-card">
+            @if (prev.alreadyInvoiced) {
+              <nz-alert
+                nzType="warning"
+                nzShowIcon
+                class="mb-4"
+                [nzMessage]="'Cuộc hẹn này đã có hóa đơn: #' + prev.existingPayment?.id + ' (' + prev.existingPayment?.status + ')'"
+                nzDescription="Nếu bạn xác nhận tiếp, hóa đơn hiện tại sẽ được cập nhật lại theo các bước mới nhất."
+              ></nz-alert>
+            }
+
+            <div class="preview-meta-grid">
+              <div class="meta-row">
+                <span class="lbl">Bệnh nhân:</span>
+                <strong>{{ prev.patientName }} ({{ prev.patientPhone }})</strong>
+              </div>
+              <div class="meta-row">
+                <span class="lbl">Bác sĩ phụ trách:</span>
+                <span>{{ prev.doctorName || 'Chưa chỉ định' }}</span>
+              </div>
+              <div class="meta-row">
+                <span class="lbl">Dịch vụ chỉ định:</span>
+                <span>{{ prev.serviceName }} ({{ prev.servicePrice | number }} đ)</span>
+              </div>
+              <div class="meta-row">
+                <span class="lbl">Phác đồ điều trị:</span>
+                @if (prev.treatmentRouteTitle) {
+                  <nz-tag nzColor="cyan">{{ prev.treatmentRouteTitle }}</nz-tag>
+                } @else {
+                  <span class="text-muted">Chưa gán phác đồ (tính giá dịch vụ gốc)</span>
+                }
+              </div>
+            </div>
+
+            <!-- Completed Stages Breakdown -->
+            <div class="completed-stages-section mt-4">
+              <h5 class="font-semibold text-sm mb-2 text-primary">
+                <span nz-icon nzType="check-square" class="mr-1 text-success"></span>
+                Các bước có trạng thái COMPLETED trong lộ trình được tính vào hóa đơn:
+              </h5>
+              @if (prev.completedStages.length === 0) {
+                <div class="p-3 bg-slate-50 border rounded text-xs text-muted">
+                  * Chưa có giai đoạn nào trong phác đồ có trạng thái COMPLETED. Hệ thống áp dụng phí dịch vụ khám cơ bản.
+                </div>
+              } @else {
+                <div class="completed-stages-list border rounded p-2 bg-slate-50">
+                  @for (st of prev.completedStages; track st.stageId) {
+                    <div class="completed-stage-item flex justify-between items-center py-1 border-b last:border-b-0 text-xs">
+                      <div>
+                        <span class="font-semibold text-ocean mr-2">Bước {{ st.sequenceOrder }}:</span>
+                        <span>{{ st.stageName }}</span>
+                      </div>
+                      <strong class="text-success">+{{ st.cost | number }} đ</strong>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Generated Invoice Code & Total Amount -->
+            <div class="invoice-summary-highlight mt-4 p-4 rounded bg-primary-50 border border-primary-100">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-semibold text-primary-dark">Hóa đơn thanh toán cho:</span>
+                <nz-tag nzColor="blue" class="font-mono text-sm px-2 py-1 font-bold">
+                  Cuộc hẹn #{{ prev.appointmentId }}
+                </nz-tag>
+              </div>
+              <div class="flex justify-between items-center pt-2 border-t border-primary-200">
+                <span class="text-base font-bold">Tổng tiền hóa đơn thanh toán:</span>
+                <span class="text-xl font-bold text-success font-mono">
+                  {{ prev.totalCalculatedAmount | number }} VNĐ
+                </span>
+              </div>
+            </div>
+
+            <!-- Payment Method Selection -->
+            <div class="payment-method-select mt-4">
+              <label class="form-label font-semibold block mb-2">Phương thức thanh toán:</label>
+              <nz-select
+                [ngModel]="apptInvoiceMethod()"
+                (ngModelChange)="apptInvoiceMethod.set($event)"
+                class="w-full"
+              >
+                @for (m of paymentMethods; track m.value) {
+                  <nz-option [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
+                }
+              </nz-select>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </ng-container>
+</nz-modal>
+
 

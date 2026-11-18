@@ -18,16 +18,25 @@ import { NzInputNumberModule } from 'ng-zorro-antd/input-number';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
+import { NzTabsModule } from 'ng-zorro-antd/tabs';
+import { NzCardModule } from 'ng-zorro-antd/card';
+import { NzStatisticModule } from 'ng-zorro-antd/statistic';
+import { NzAlertModule } from 'ng-zorro-antd/alert';
 
 import { PaymentService } from '../../core/services/payment.service';
 import { UserService } from '../../core/services/user.service';
+import { AppointmentService } from '../../core/services/appointment.service';
 import { AuthService } from '../../core/services/auth.service';
 import {
+  Appointment,
+  AppointmentInvoicePreview,
+  CreateAppointmentInvoiceRequest,
   Payment,
   PaymentConfirmRequest,
   PaymentCreateRequest,
   PaymentMethod,
   PaymentStatus,
+  RouteFinancialStatistics,
   User
 } from '../../core/models/dental.models';
 
@@ -47,7 +56,11 @@ import {
     NzInputModule,
     NzInputNumberModule,
     NzSelectModule,
-    NzToolTipModule
+    NzToolTipModule,
+    NzTabsModule,
+    NzCardModule,
+    NzStatisticModule,
+    NzAlertModule
   ],
   templateUrl: './payment-management.component.html',
   styleUrls: ['./payment-management.component.scss']
@@ -56,6 +69,7 @@ export class PaymentManagementComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly paymentService = inject(PaymentService);
   private readonly userService = inject(UserService);
+  private readonly appointmentService = inject(AppointmentService);
   readonly authService = inject(AuthService);
   private readonly message = inject(NzMessageService);
 
@@ -74,6 +88,20 @@ export class PaymentManagementComponent implements OnInit {
   readonly isCreateModalVisible = signal<boolean>(false);
   readonly isConfirmModalVisible = signal<boolean>(false);
   readonly selectedPayment = signal<Payment | null>(null);
+
+  // Route Financial Statistics Signals
+  readonly isRouteStatsModalVisible = signal<boolean>(false);
+  readonly routeStats = signal<RouteFinancialStatistics[]>([]);
+  readonly isLoadingRouteStats = signal<boolean>(false);
+
+  // Appointment Invoice Creation Signals
+  readonly isApptInvoiceModalVisible = signal<boolean>(false);
+  readonly appointmentsList = signal<Appointment[]>([]);
+  readonly selectedApptId = signal<number | null>(null);
+  readonly invoicePreview = signal<AppointmentInvoicePreview | null>(null);
+  readonly isLoadingPreview = signal<boolean>(false);
+  readonly isCreatingApptInvoice = signal<boolean>(false);
+  readonly apptInvoiceMethod = signal<PaymentMethod>(PaymentMethod.CASH);
 
   readonly paymentMethods = [
     { label: 'Chuyển khoản Ngân hàng (QR)', value: PaymentMethod.BANK_TRANSFER },
@@ -260,6 +288,100 @@ export class PaymentManagementComponent implements OnInit {
       default:
         return 'status-badge--neutral';
     }
+  }
+
+  // =========================================================================
+  // ROUTE FINANCIAL STATISTICS MODAL
+  // =========================================================================
+
+  openRouteStatsModal(): void {
+    this.isLoadingRouteStats.set(true);
+    this.isRouteStatsModalVisible.set(true);
+    this.paymentService.getAllRouteStatistics().subscribe({
+      next: res => {
+        if (res.success && res.data) {
+          this.routeStats.set(res.data);
+        }
+        this.isLoadingRouteStats.set(false);
+      },
+      error: () => {
+        this.message.error('Không thể tải thống kê tài chính theo lộ trình.');
+        this.isLoadingRouteStats.set(false);
+      }
+    });
+  }
+
+  // =========================================================================
+  // APPOINTMENT INVOICE CREATION BASED ON COMPLETED STAGES
+  // =========================================================================
+
+  openCreateAppointmentInvoiceModal(preselectedApptId?: number): void {
+    this.invoicePreview.set(null);
+    this.apptInvoiceMethod.set(PaymentMethod.CASH);
+    this.isApptInvoiceModalVisible.set(true);
+
+    this.appointmentService.getAppointments({ size: 100, sortBy: 'appointmentDate', sortDir: 'desc' }).subscribe({
+      next: res => {
+        if (res.success && res.data) {
+          this.appointmentsList.set(res.data.items);
+          if (preselectedApptId) {
+            this.selectedApptId.set(preselectedApptId);
+            this.onSelectAppointmentForInvoice(preselectedApptId);
+          } else if (res.data.items.length > 0) {
+            this.selectedApptId.set(res.data.items[0].id);
+            this.onSelectAppointmentForInvoice(res.data.items[0].id);
+          }
+        }
+      }
+    });
+  }
+
+  onSelectAppointmentForInvoice(apptId: number): void {
+    this.selectedApptId.set(apptId);
+    if (!apptId) {
+      this.invoicePreview.set(null);
+      return;
+    }
+    this.isLoadingPreview.set(true);
+    this.paymentService.previewAppointmentInvoice(apptId).subscribe({
+      next: res => {
+        if (res.success && res.data) {
+          this.invoicePreview.set(res.data);
+        }
+        this.isLoadingPreview.set(false);
+      },
+      error: () => {
+        this.message.error('Không thể kiểm tra thông tin phác đồ và các bước cho cuộc hẹn này.');
+        this.isLoadingPreview.set(false);
+      }
+    });
+  }
+
+  submitCreateAppointmentInvoice(): void {
+    const apptId = this.selectedApptId();
+    if (!apptId) {
+      this.message.warning('Vui lòng chọn cuộc hẹn cần xuất hóa đơn!');
+      return;
+    }
+
+    const payload: CreateAppointmentInvoiceRequest = {
+      method: this.apptInvoiceMethod()
+    };
+
+    this.isCreatingApptInvoice.set(true);
+    this.paymentService.createInvoiceForAppointment(apptId, payload).subscribe({
+      next: res => {
+        this.message.success(`Đã tạo hóa đơn mã [#${res.data?.id}] cho cuộc hẹn thành công!`);
+        this.isApptInvoiceModalVisible.set(false);
+        this.isCreatingApptInvoice.set(false);
+        this.loadPayments();
+      },
+      error: err => {
+        const msg = err.error?.message || 'Không thể tạo hóa đơn cho cuộc hẹn.';
+        this.message.error(msg);
+        this.isCreatingApptInvoice.set(false);
+      }
+    });
   }
 }
 

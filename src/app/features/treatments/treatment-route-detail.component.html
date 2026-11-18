@@ -1,4 +1,53 @@
 <div class="treatment-detail-page">
+  <!-- ROUTE SELECTOR & MANAGEMENT BAR -->
+  <div class="dental-card route-switcher-card">
+    <div class="route-switcher-content">
+      <div class="route-selector-group">
+        <label class="selector-label">
+          <span nz-icon nzType="branches" class="text-ocean"></span>
+          <span>Chọn phác đồ điều trị:</span>
+        </label>
+        <nz-select
+          [ngModel]="routeId()"
+          (ngModelChange)="selectRoute($event)"
+          class="route-select-dropdown"
+          nzPlaceHolder="Chọn phác đồ điều trị"
+        >
+          @for (r of allRoutes(); track r.id) {
+            <nz-option [nzValue]="r.id" [nzLabel]="'#' + r.id + ' - ' + r.title"></nz-option>
+          }
+        </nz-select>
+      </div>
+
+      <div class="route-actions-group">
+        @if (isDoctorOrAdmin()) {
+          <button nz-button nzType="primary" (click)="openCreateRouteModal()" class="btn-create-route">
+            <span nz-icon nzType="plus"></span>
+            <span>Tạo lộ trình mới</span>
+          </button>
+
+          @if (userRole() === 'ADMIN' && allRoutes().length > 1) {
+            <button
+              nz-button
+              nzDanger
+              nzType="dashed"
+              nz-popconfirm
+              nzPopconfirmTitle="Bạn có chắc chắn muốn xóa lộ trình điều trị này và các giai đoạn liên quan?"
+              (nzOnConfirm)="deleteCurrentRoute()"
+            >
+              <span nz-icon nzType="delete"></span>
+              <span>Xóa lộ trình</span>
+            </button>
+          }
+        }
+
+        <button nz-button nzType="default" (click)="loadStages()" [nzLoading]="isLoading()" title="Tải lại">
+          <span nz-icon nzType="reload"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- PROTOCOL OVERVIEW BANNER -->
   <div class="dental-card protocol-card">
     <div class="protocol-card__header">
@@ -29,7 +78,11 @@
       </div>
       <div class="metric-item">
         <span class="metric-label">Tổng chi phí dự kiến</span>
-        <span class="metric-value text-success">{{ totalTreatmentCost() | number }} VNĐ</span>
+        <span class="metric-value">{{ totalTreatmentCost() | number }} VNĐ</span>
+      </div>
+      <div class="metric-item metric-item--completed">
+        <span class="metric-label">Đã hoàn thành (Tính vào HĐ)</span>
+        <span class="metric-value text-success font-bold">{{ completedTreatmentCost() | number }} VNĐ</span>
       </div>
       <div class="metric-item">
         <span class="metric-label">Tổng thời gian chờ</span>
@@ -256,4 +309,45 @@
     </form>
   </ng-container>
 </nz-modal>
+
+<!-- ======================================================================== -->
+<!-- MODAL: CREATE TREATMENT ROUTE                                           -->
+<!-- ======================================================================== -->
+<nz-modal
+  [nzVisible]="isCreateRouteModalVisible()"
+  nzTitle="Khởi Tạo Lộ Trình / Phác Đồ Điều Trị Mới"
+  (nzOnCancel)="isCreateRouteModalVisible.set(false)"
+  (nzOnOk)="submitCreateRoute()"
+  nzOkText="Tạo lộ trình"
+  nzCancelText="Hủy"
+  [nzWidth]="560"
+>
+  <ng-container *nzModalContent>
+    <form [formGroup]="routeForm" nz-form nzLayout="vertical">
+      <nz-form-item>
+        <nz-form-label nzRequired>Tên lộ trình / Phác đồ</nz-form-label>
+        <nz-form-control nzErrorTip="Vui lòng nhập tên lộ trình điều trị!">
+          <input
+            nz-input
+            formControlName="title"
+            placeholder="Ví dụ: Phác đồ Chỉnh nha Mắc cài sứ tự buộc..."
+          />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label>Mô tả chi tiết phác đồ</nz-form-label>
+        <nz-form-control>
+          <textarea
+            nz-input
+            formControlName="description"
+            rows="4"
+            placeholder="Mô tả chỉ định lâm sàng, mục tiêu điều trị, đối tượng chỉ định..."
+          ></textarea>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </ng-container>
+</nz-modal>
+
 

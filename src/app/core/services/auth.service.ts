@@ -54,8 +54,8 @@ export class AuthService {
   });
 
   /**
-   * Computed signal checking if user is currently authenticated
-   */
+     * Computed signal checking if user is currently authenticated
+     */
   readonly isAuthenticated = computed<boolean>(() => {
     return !!this.getAccessToken();
   });

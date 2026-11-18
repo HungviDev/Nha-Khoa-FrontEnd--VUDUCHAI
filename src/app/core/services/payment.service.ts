@@ -8,12 +8,15 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   ApiResponse,
+  AppointmentInvoicePreview,
+  CreateAppointmentInvoiceRequest,
   PageParams,
   PageResponse,
   Payment,
   PaymentConfirmRequest,
   PaymentCreateRequest,
-  PaymentFilterParams
+  PaymentFilterParams,
+  RouteFinancialStatistics
 } from '../models/dental.models';
 
 @Injectable({
@@ -77,6 +80,38 @@ export class PaymentService {
    */
   confirmPayment(id: number, request: PaymentConfirmRequest): Observable<ApiResponse<Payment>> {
     return this.http.post<ApiResponse<Payment>>(`${this.baseUrl}/${id}/confirm`, request);
+  }
+
+  /**
+   * GET /api/v1/payments/route-statistics/{routeId}
+   * Get financial breakdown and completed stages calculation for a treatment route
+   */
+  getRouteStatistics(routeId: number): Observable<ApiResponse<RouteFinancialStatistics>> {
+    return this.http.get<ApiResponse<RouteFinancialStatistics>>(`${this.baseUrl}/route-statistics/${routeId}`);
+  }
+
+  /**
+   * GET /api/v1/payments/route-statistics
+   * Get financial breakdown across all treatment routes
+   */
+  getAllRouteStatistics(): Observable<ApiResponse<RouteFinancialStatistics[]>> {
+    return this.http.get<ApiResponse<RouteFinancialStatistics[]>>(`${this.baseUrl}/route-statistics`);
+  }
+
+  /**
+   * GET /api/v1/payments/appointment/{appointmentId}/invoice-preview
+   * Preview bill/invoice details for a specific appointment based on COMPLETED stages of treatment route
+   */
+  previewAppointmentInvoice(appointmentId: number): Observable<ApiResponse<AppointmentInvoicePreview>> {
+    return this.http.get<ApiResponse<AppointmentInvoicePreview>>(`${this.baseUrl}/appointment/${appointmentId}/invoice-preview`);
+  }
+
+  /**
+   * POST /api/v1/payments/appointment/{appointmentId}/create-invoice
+   * Generate a unique invoice for an appointment based on completed stages
+   */
+  createInvoiceForAppointment(appointmentId: number, request: CreateAppointmentInvoiceRequest): Observable<ApiResponse<Payment>> {
+    return this.http.post<ApiResponse<Payment>>(`${this.baseUrl}/appointment/${appointmentId}/create-invoice`, request);
   }
 }
 

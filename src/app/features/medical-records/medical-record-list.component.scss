@@ -156,3 +156,220 @@
   }
 }
 
+// ----------------------------------------------------------------------------
+// ROUTE LINKED CELL & BUTTONS
+// ----------------------------------------------------------------------------
+
+.route-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+
+  .route-tag {
+    margin: 0;
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+  }
+
+  .btn-stages-step {
+    padding: 0;
+    height: auto;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: $primary-color;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.btn-choose-route {
+  color: $primary-color;
+  border-color: $primary-lighter;
+  background-color: $primary-50;
+
+  &:hover {
+    border-color: $primary-color;
+    background-color: rgba(2, 132, 199, 0.1);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// ASSIGN ROUTE MODAL STYLES
+// ----------------------------------------------------------------------------
+
+.assign-route-modal-body {
+  .record-summary-banner {
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-radius: $border-radius-sm;
+    border: 1px solid $border-color-base;
+
+    .summary-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 13px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .label {
+        color: $text-muted;
+        min-width: 90px;
+      }
+    }
+  }
+
+  .route-select-wrapper {
+    margin-top: 16px;
+
+    .form-label {
+      font-size: 14px;
+      color: $text-primary;
+    }
+  }
+}
+
+// ----------------------------------------------------------------------------
+// TREATMENT STAGES PROGRESSION MODAL
+// ----------------------------------------------------------------------------
+
+.stages-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.stages-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  .record-meta-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px 24px;
+    padding: 12px 16px;
+    background: #f1f5f9;
+    border-radius: $border-radius-sm;
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+
+      .meta-label {
+        color: $text-muted;
+      }
+    }
+  }
+
+  .modal-stepper-box {
+    padding: 12px 0;
+    overflow-x: auto;
+  }
+
+  .stages-transition-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 440px;
+    overflow-y: auto;
+    padding-right: 4px;
+
+    .stage-transition-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 18px;
+      background: #ffffff;
+      border: 1px solid $border-color-base;
+      border-radius: $border-radius-sm;
+      transition: all 0.2s ease;
+
+      &.is-current {
+        border-color: $primary-color;
+        background: $primary-50;
+        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.08);
+      }
+
+      .stage-main-info {
+        flex: 1;
+
+        .stage-header-line {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 6px;
+
+          .seq-badge {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: $text-muted;
+          }
+        }
+
+        .stage-name {
+          margin: 0 0 6px 0;
+          font-size: 15px;
+          font-weight: 600;
+          color: $text-primary;
+        }
+
+        .stage-sub-info {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 16px;
+          font-size: 12px;
+          color: $text-secondary;
+          margin-bottom: 4px;
+        }
+
+        .stage-note {
+          margin: 4px 0 0 0;
+          font-size: 12px;
+          color: $text-muted;
+          font-style: italic;
+        }
+      }
+
+      .stage-transition-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+
+        .btn-start-stage {
+          background-color: #3b82f6;
+          border-color: #3b82f6;
+        }
+
+        .btn-finish-stage {
+          background-color: #10b981;
+          border-color: #10b981;
+
+          &:hover {
+            background-color: #059669;
+            border-color: #059669;
+          }
+        }
+      }
+    }
+  }
+}
+
+
