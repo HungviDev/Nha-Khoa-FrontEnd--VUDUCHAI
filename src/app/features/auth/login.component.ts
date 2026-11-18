@@ -39,7 +39,7 @@ import { AuthService } from '../../core/services/auth.service';
           <div class="logo-icon">
             <span nz-icon nzType="medicine-box"></span>
           </div>
-          <h1>OCEAN DENTAL</h1>
+          <h1>Nha khoa An Tâm</h1>
           <p>Hệ thống Quản lý Khám Chữa Bệnh Nha Khoa</p>
         </div>
 

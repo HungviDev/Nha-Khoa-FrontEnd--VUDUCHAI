@@ -40,7 +40,7 @@ import { RegisterRequest } from '../../core/models/dental.models';
           <div class="logo-icon">
             <span nz-icon nzType="medicine-box"></span>
           </div>
-          <h1>OCEAN DENTAL</h1>
+          <h1>Nha khoa An Tâm</h1>
           <p>Đăng Ký Hồ Sơ Khám Bệnh Nhân Mới</p>
         </div>
 

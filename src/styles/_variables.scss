@@ -25,11 +25,11 @@ $status-warning: #f59e0b; // PENDING, IN_PROGRESS
 $status-warning-bg: #fffbeb;
 $status-warning-border: #fde68a;
 
-$status-danger: #ef4444;  // CANCELLED, FAILED
+$status-danger: #ef4444; // CANCELLED, FAILED
 $status-danger-bg: #fef2f2;
 $status-danger-border: #fecaca;
 
-$status-info: #0284c7;    // INFO
+$status-info: #0284c7; // INFO
 $status-info-bg: #f0f9ff;
 $status-info-border: #bae6fd;
 
@@ -69,4 +69,3 @@ $shadow-modal: 0 20px 40px -15px rgba(2, 132, 199, 0.2);
 
 // Spacing & Transitions
 $transition-base: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-

@@ -1,52 +1,46 @@
 <nz-layout class="layout-wrapper">
   <!-- SIDEBAR NAVIGATION -->
-  <nz-sider
-    class="sidebar"
-    nzCollapsible
-    [(nzCollapsed)]="isCollapsed"
-    [nzTrigger]="null"
-    [nzWidth]="260"
-    [nzCollapsedWidth]="80"
-  >
+  <nz-sider class="sidebar" nzCollapsible [(nzCollapsed)]="isCollapsed" [nzTrigger]="null" [nzWidth]="260"
+    [nzCollapsedWidth]="80">
     <!-- Brand / Clinic Header -->
     <div class="sidebar-logo">
       <div class="logo-icon">
         <span nz-icon nzType="medicine-box" nzTheme="outline"></span>
       </div>
       @if (!isCollapsed()) {
-        <div class="logo-text">
-          <span class="logo-title">OCEAN DENTAL</span>
-          <span class="logo-subtitle">Hệ Thống Nha Khoa</span>
-        </div>
+      <div class="logo-text">
+        <span class="logo-title">Nha Khoa An Tâm</span>
+        <span class="logo-subtitle">Hệ Thống Nha Khoa</span>
+      </div>
       }
     </div>
 
     <!-- Dynamic Menu based on userRole() -->
     <ul nz-menu nzMode="inline" class="sidebar-menu">
       @for (item of menuItems(); track item.title) {
-        @if (item.children && item.children.length > 0) {
-          <!-- Submenu with child items -->
-          <li nz-submenu [nzTitle]="item.title" [nzIcon]="item.icon">
-            <ul>
-              @for (child of item.children; track child.title) {
-                <li nz-menu-item nzMatchRouter>
-                  <a [routerLink]="child.route">
-                    <span nz-icon [nzType]="child.icon"></span>
-                    <span>{{ child.title }}</span>
-                  </a>
-                </li>
-              }
-            </ul>
-          </li>
-        } @else {
-          <!-- Single Menu Item -->
+      @if (item.children && item.children.length > 0) {
+      <!-- Submenu with child items -->
+      <li nz-submenu [nzTitle]="item.title" [nzIcon]="item.icon">
+        <ul>
+          @for (child of item.children; track child.title) {
           <li nz-menu-item nzMatchRouter>
-            <a [routerLink]="item.route">
-              <span nz-icon [nzType]="item.icon"></span>
-              <span>{{ item.title }}</span>
+            <a [routerLink]="child.route">
+              <span nz-icon [nzType]="child.icon"></span>
+              <span>{{ child.title }}</span>
             </a>
           </li>
-        }
+          }
+        </ul>
+      </li>
+      } @else {
+      <!-- Single Menu Item -->
+      <li nz-menu-item nzMatchRouter>
+        <a [routerLink]="item.route">
+          <span nz-icon [nzType]="item.icon"></span>
+          <span>{{ item.title }}</span>
+        </a>
+      </li>
+      }
       }
     </ul>
   </nz-sider>
@@ -56,13 +50,8 @@
     <!-- TOPBAR / HEADER -->
     <nz-header class="topbar">
       <div class="topbar-left">
-        <button
-          nz-button
-          nzType="text"
-          class="collapse-trigger"
-          (click)="toggleCollapsed()"
-          [title]="isCollapsed() ? 'Mở rộng sidebar' : 'Thu gọn sidebar'"
-        >
+        <button nz-button nzType="text" class="collapse-trigger" (click)="toggleCollapsed()"
+          [title]="isCollapsed() ? 'Mở rộng sidebar' : 'Thu gọn sidebar'">
           <span nz-icon [nzType]="isCollapsed() ? 'menu-unfold' : 'menu-fold'"></span>
         </button>
 
@@ -78,18 +67,10 @@
       <!-- Topbar Right: User Information & Actions -->
       <div class="topbar-right">
         <!-- User Profile Dropdown -->
-        <div
-          class="user-profile-badge"
-          nz-dropdown
-          [nzDropdownMenu]="userMenu"
-          nzPlacement="bottomRight"
-          nzTrigger="click"
-        >
-          <nz-avatar
-            [nzSrc]="currentUser()?.avatar || ''"
-            [nzText]="(currentUser()?.fullname || 'U').charAt(0)"
-            class="user-avatar"
-          ></nz-avatar>
+        <div class="user-profile-badge" nz-dropdown [nzDropdownMenu]="userMenu" nzPlacement="bottomRight"
+          nzTrigger="click">
+          <nz-avatar [nzSrc]="currentUser()?.avatar || ''" [nzText]="(currentUser()?.fullname || 'U').charAt(0)"
+            class="user-avatar"></nz-avatar>
 
           <div class="user-meta">
             <span class="user-name">{{ currentUser()?.fullname || 'Người dùng' }}</span>
@@ -136,8 +117,8 @@
 
     <!-- FOOTER -->
     <nz-footer class="app-footer">
-      <span>© 2026 Ocean Dental Clinic Management System. All rights reserved. Tiêu chuẩn Y tế Hiện đại & Tin cậy.</span>
+      <span>© 2026 Nha khoa An Tâm Clinic Management System. All rights reserved. Tiêu chuẩn Y tế Hiện đại & Tin
+        cậy.</span>
     </nz-footer>
   </nz-layout>
 </nz-layout>
-
