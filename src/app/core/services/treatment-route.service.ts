@@ -73,5 +73,37 @@ export class TreatmentRouteService {
   deleteRoute(id: number): Observable<ApiResponse<void>> {
     return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/${id}`);
   }
+
+  /**
+   * GET /api/v1/medical-records/patient/current-treatment-route
+   * Get current treatment route of logged-in patient
+   */
+  getMyCurrentTreatmentRoute(): Observable<ApiResponse<TreatmentRoute | null>> {
+    return this.http.get<ApiResponse<TreatmentRoute | null>>(`${environment.apiUrl}/medical-records/patient/current-treatment-route`);
+  }
+
+  /**
+   * GET /api/v1/medical-records/patient/treatment-routes
+   * Get all treatment routes of logged-in patient
+   */
+  getMyTreatmentRoutes(): Observable<ApiResponse<TreatmentRoute[]>> {
+    return this.http.get<ApiResponse<TreatmentRoute[]>>(`${environment.apiUrl}/medical-records/patient/treatment-routes`);
+  }
+
+  /**
+   * GET /api/v1/medical-records/patient/{userId}/current-treatment-route
+   * Get current treatment route for a specific patient (ADMIN, DOCTOR, or Patient Owner)
+   */
+  getCurrentTreatmentRouteByPatient(userId: number): Observable<ApiResponse<TreatmentRoute | null>> {
+    return this.http.get<ApiResponse<TreatmentRoute | null>>(`${environment.apiUrl}/medical-records/patient/${userId}/current-treatment-route`);
+  }
+
+  /**
+   * GET /api/v1/medical-records/patient/{userId}/treatment-routes
+   * Get all treatment routes for a specific patient (ADMIN, DOCTOR, or Patient Owner)
+   */
+  getTreatmentRoutesByPatient(userId: number): Observable<ApiResponse<TreatmentRoute[]>> {
+    return this.http.get<ApiResponse<TreatmentRoute[]>>(`${environment.apiUrl}/medical-records/patient/${userId}/treatment-routes`);
+  }
 }
 

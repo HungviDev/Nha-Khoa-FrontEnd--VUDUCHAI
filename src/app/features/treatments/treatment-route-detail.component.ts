@@ -22,6 +22,8 @@ import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
+import { NzAlertModule } from 'ng-zorro-antd/alert';
+import { NzEmptyModule } from 'ng-zorro-antd/empty';
 
 import { AuthService } from '../../core/services/auth.service';
 import { TreatmentRouteService } from '../../core/services/treatment-route.service';
@@ -54,7 +56,9 @@ import {
     NzSelectModule,
     NzDatePickerModule,
     NzPopconfirmModule,
-    NzToolTipModule
+    NzToolTipModule,
+    NzAlertModule,
+    NzEmptyModule
   ],
   templateUrl: './treatment-route-detail.component.html',
   styleUrls: ['./treatment-route-detail.component.scss']
@@ -75,9 +79,14 @@ export class TreatmentRouteDetailComponent implements OnInit {
     return role === 'ADMIN' || role === 'DOCTOR';
   });
 
+  readonly isPatient = computed(() => {
+    return this.userRole() === 'PATIENT';
+  });
   // Clinical Data Signals
   readonly allRoutes = signal<TreatmentRoute[]>([]);
-  readonly routeId = signal<number>(1);
+  readonly patientRoutes = signal<TreatmentRoute[]>([]);
+  readonly hasNoAssignedRoute = signal<boolean>(false);
+  readonly routeId = signal<number>(0);
   readonly treatmentRoute = signal<TreatmentRoute | null>(null);
   readonly stages = signal<TreatmentStage[]>([]);
   readonly isLoading = signal<boolean>(false);
@@ -131,17 +140,69 @@ export class TreatmentRouteDetailComponent implements OnInit {
 
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
-    const parsedId = idParam ? parseInt(idParam, 10) : 1;
-    this.routeId.set(parsedId);
+    const parsedId = idParam ? parseInt(idParam, 10) : null;
 
-    this.loadAllRoutes();
-    this.loadRouteDetails();
-    this.loadStages();
+    if (this.isPatient()) {
+      this.loadPatientRoutes(parsedId);
+    } else {
+      const initialId = parsedId || 1;
+      this.routeId.set(initialId);
+      this.loadAllRoutes();
+      this.loadRouteDetails();
+      this.loadStages();
+    }
   }
 
   // ----------------------------------------------------------------------------
   // DATA LOADING
   // ----------------------------------------------------------------------------
+
+  loadPatientRoutes(preferredId: number | null = null): void {
+    this.isLoading.set(true);
+    this.hasNoAssignedRoute.set(false);
+    this.routeService.getMyTreatmentRoutes().subscribe({
+      next: res => {
+        this.isLoading.set(false);
+        if (res.success && res.data && res.data.length > 0) {
+          this.patientRoutes.set(res.data);
+          this.hasNoAssignedRoute.set(false);
+
+          let targetRoute = res.data[0];
+          if (preferredId) {
+            const found = res.data.find(r => r.id === preferredId);
+            if (found) targetRoute = found;
+          }
+
+          this.routeId.set(targetRoute.id);
+          this.treatmentRoute.set(targetRoute);
+          this.loadStages();
+        } else {
+          this.patientRoutes.set([]);
+          this.treatmentRoute.set(null);
+          this.stages.set([]);
+          this.hasNoAssignedRoute.set(true);
+        }
+      },
+      error: () => {
+        this.isLoading.set(false);
+        this.patientRoutes.set([]);
+        this.treatmentRoute.set(null);
+        this.stages.set([]);
+        this.hasNoAssignedRoute.set(true);
+      }
+    });
+  }
+
+  selectPatientRoute(id: number): void {
+    this.routeId.set(id);
+    const found = this.patientRoutes().find(r => r.id === id);
+    if (found) {
+      this.treatmentRoute.set(found);
+    } else {
+      this.loadRouteDetails();
+    }
+    this.loadStages();
+  }
 
   loadAllRoutes(): void {
     this.routeService.getRoutes({ size: 100, sortBy: 'id', sortDir: 'asc' }).subscribe({
@@ -201,37 +262,46 @@ export class TreatmentRouteDetailComponent implements OnInit {
   }
 
   loadRouteDetails(): void {
-    this.routeService.getRouteById(this.routeId()).subscribe({
+    const currentId = this.routeId();
+    if (this.hasNoAssignedRoute() || !currentId) return;
+    this.routeService.getRouteById(currentId).subscribe({
       next: res => {
         if (res.success && res.data) {
           this.treatmentRoute.set(res.data);
         }
       },
       error: () => {
-        // Fallback for demonstration/mock preview if route not found
-        this.treatmentRoute.set({
-          id: this.routeId(),
-          title: 'Phác Đồ Cấy Ghép Implant Nha Khoa Toàn Diện',
-          description: 'Quy trình phục hình răng mất bằng trụ Titanium sinh học, bao gồm các bước thăm khám chụp CT 3D, cấy trụ, gắn Abutment và phục hình răng sứ.',
-          createdAt: '2026-03-01 08:30:00'
-        });
+        if (!this.isPatient()) {
+          // Fallback for demonstration/mock preview if route not found
+          this.treatmentRoute.set({
+            id: currentId,
+            title: 'Phác Đồ Cấy Ghép Implant Nha Khoa Toàn Diện',
+            description: 'Quy trình phục hình răng mất bằng trụ Titanium sinh học, bao gồm các bước thăm khám chụp CT 3D, cấy trụ, gắn Abutment và phục hình răng sứ.',
+            createdAt: '2026-03-01 08:30:00'
+          });
+        }
       }
     });
   }
 
   loadStages(): void {
+    const currentId = this.routeId();
+    if (this.hasNoAssignedRoute() || !currentId) {
+      this.stages.set([]);
+      return;
+    }
     this.isLoading.set(true);
-    this.stageService.getStagesByRouteId(this.routeId()).subscribe({
+    this.stageService.getStagesByRouteId(currentId).subscribe({
       next: res => {
         if (res.success && res.data && res.data.length > 0) {
           this.stages.set(res.data);
         } else {
-          this.stages.set(this.getMockStages());
+          this.stages.set([]);
         }
         this.isLoading.set(false);
       },
       error: () => {
-        this.stages.set(this.getMockStages());
+        this.stages.set([]);
         this.isLoading.set(false);
       }
     });
@@ -366,64 +436,6 @@ export class TreatmentRouteDetailComponent implements OnInit {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
   }
 
-  private getMockStages(): TreatmentStage[] {
-    return [
-      {
-        id: 101,
-        treatmentRouteId: this.routeId(),
-        stageName: 'Thăm khám lâm sàng & Chụp phim Cone Beam CT 3D',
-        sequenceOrder: 1,
-        status: TreatmentStageStatus.COMPLETED,
-        appointmentDate: '2026-03-05 09:00:00',
-        cost: 500000,
-        delay: 0,
-        note: 'Đã hoàn tất đánh giá thể tích xương hàm, mật độ xương D2 đủ điều kiện cấy ghép.'
-      },
-      {
-        id: 102,
-        treatmentRouteId: this.routeId(),
-        stageName: 'Phẫu thuật cấy ghép trụ Titanium Implant Straumann',
-        sequenceOrder: 2,
-        status: TreatmentStageStatus.IN_PROGRESS,
-        appointmentDate: '2026-03-12 14:00:00',
-        cost: 18000000,
-        delay: 7,
-        note: 'Tiến hành gây tê tại chỗ, đặt trụ Implant #36 kèm ghép màng xương tự tiêu.'
-      },
-      {
-        id: 103,
-        treatmentRouteId: this.routeId(),
-        stageName: 'Tái khám tích hợp xương & Gắn trụ Abutment kết nối',
-        sequenceOrder: 3,
-        status: TreatmentStageStatus.PENDING,
-        appointmentDate: '2026-06-15 10:00:00',
-        cost: 3000000,
-        delay: 90,
-        note: 'Kiểm tra độ tích hợp osseointegration bằng máy đo ISQ trước khi lấy dấu răng.'
-      },
-      {
-        id: 104,
-        treatmentRouteId: this.routeId(),
-        stageName: 'Lấy dấu mẫu hàm số hóa 3D & Chế tác mão răng toàn sứ',
-        sequenceOrder: 4,
-        status: TreatmentStageStatus.PENDING,
-        appointmentDate: '2026-06-25 15:30:00',
-        cost: 6500000,
-        delay: 10,
-        note: 'Công nghệ CAD/CAM chế tác mão răng Cercon HT khớp cắn chuẩn xác.'
-      },
-      {
-        id: 105,
-        treatmentRouteId: this.routeId(),
-        stageName: 'Gắn mão sứ hoàn thiện & Hướng dẫn vệ sinh định kỳ',
-        sequenceOrder: 5,
-        status: TreatmentStageStatus.PENDING,
-        appointmentDate: '2026-07-02 09:00:00',
-        cost: 0,
-        delay: 7,
-        note: 'Bàn giao thẻ bảo hành chính hãng và lên lịch kiểm tra định kỳ 6 tháng.'
-      }
-    ];
-  }
+
 }
 

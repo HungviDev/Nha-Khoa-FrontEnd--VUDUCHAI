@@ -5,18 +5,30 @@
       <div class="route-selector-group">
         <label class="selector-label">
           <span nz-icon nzType="branches" class="text-ocean"></span>
-          <span>Chọn phác đồ điều trị:</span>
+          <span>{{ isPatient() ? 'Phác đồ của bạn:' : 'Chọn phác đồ điều trị:' }}</span>
         </label>
-        <nz-select
-          [ngModel]="routeId()"
-          (ngModelChange)="selectRoute($event)"
-          class="route-select-dropdown"
-          nzPlaceHolder="Chọn phác đồ điều trị"
-        >
-          @for (r of allRoutes(); track r.id) {
-            <nz-option [nzValue]="r.id" [nzLabel]="'#' + r.id + ' - ' + r.title"></nz-option>
+        @if (isDoctorOrAdmin()) {
+          <nz-select [ngModel]="routeId()" (ngModelChange)="selectRoute($event)" class="route-select-dropdown"
+            nzPlaceHolder="Chọn phác đồ điều trị">
+            @for (r of allRoutes(); track r.id) {
+              <nz-option [nzValue]="r.id" [nzLabel]="'#' + r.id + ' - ' + r.title"></nz-option>
+            }
+          </nz-select>
+        } @else if (isPatient()) {
+          @if (patientRoutes().length > 1) {
+            <nz-select [ngModel]="routeId()" (ngModelChange)="selectPatientRoute($event)" class="route-select-dropdown"
+              nzPlaceHolder="Chọn phác đồ của bạn">
+              @for (r of patientRoutes(); track r.id) {
+                <nz-option [nzValue]="r.id" [nzLabel]="'#' + r.id + ' - ' + r.title"></nz-option>
+              }
+            </nz-select>
+          } @else if (patientRoutes().length === 1) {
+            <nz-tag nzColor="cyan" class="patient-route-badge">
+              <span nz-icon nzType="check-circle"></span>
+              <span>#{{ patientRoutes()[0].id }} - {{ patientRoutes()[0].title }}</span>
+            </nz-tag>
           }
-        </nz-select>
+        }
       </div>
 
       <div class="route-actions-group">
@@ -27,26 +39,52 @@
           </button>
 
           @if (userRole() === 'ADMIN' && allRoutes().length > 1) {
-            <button
-              nz-button
-              nzDanger
-              nzType="dashed"
-              nz-popconfirm
+            <button nz-button nzDanger nzType="dashed" nz-popconfirm
               nzPopconfirmTitle="Bạn có chắc chắn muốn xóa lộ trình điều trị này và các giai đoạn liên quan?"
-              (nzOnConfirm)="deleteCurrentRoute()"
-            >
+              (nzOnConfirm)="deleteCurrentRoute()">
               <span nz-icon nzType="delete"></span>
               <span>Xóa lộ trình</span>
             </button>
           }
         }
 
-        <button nz-button nzType="default" (click)="loadStages()" [nzLoading]="isLoading()" title="Tải lại">
+        <button nz-button nzType="default" (click)="isPatient() ? loadPatientRoutes(routeId()) : loadStages()" [nzLoading]="isLoading()" title="Tải lại">
           <span nz-icon nzType="reload"></span>
         </button>
       </div>
     </div>
   </div>
+
+  @if (isPatient() && hasNoAssignedRoute()) {
+    <div class="dental-card empty-route-card">
+      <div class="empty-state-wrapper text-center py-12 px-6">
+        <nz-empty
+          [nzNotFoundImage]="'simple'"
+          [nzNotFoundContent]="contentTpl"
+          [nzNotFoundFooter]="footerTpl">
+          <ng-template #contentTpl>
+            <h3 class="font-semibold text-lg text-slate-800 mt-2">Chưa Có Phác Đồ Điều Trị</h3>
+            <p class="text-slate-500 max-w-md mx-auto mt-2 leading-relaxed">
+              Hiện tại bạn chưa có lộ trình điều trị nào được bác sĩ chỉ định trong hồ sơ bệnh án.
+              Sau khi bạn đến khám tại nha khoa, bác sĩ sẽ lập phác đồ và tiến độ các giai đoạn điều trị cho bạn tại đây.
+            </p>
+          </ng-template>
+          <ng-template #footerTpl>
+            <div class="mt-6 flex justify-center gap-3">
+              <a nz-button nzType="primary" routerLink="/patient/booking">
+                <span nz-icon nzType="calendar"></span>
+                <span>Đặt lịch khám ngay</span>
+              </a>
+              <a nz-button nzType="default" routerLink="/patient/medical-records">
+                <span nz-icon nzType="file-text"></span>
+                <span>Xem hồ sơ bệnh án</span>
+              </a>
+            </div>
+          </ng-template>
+        </nz-empty>
+      </div>
+    </div>
+  } @else {
 
   <!-- PROTOCOL OVERVIEW BANNER -->
   <div class="dental-card protocol-card">
@@ -59,10 +97,10 @@
 
       <div class="header-actions">
         @if (isDoctorOrAdmin()) {
-          <button nz-button nzType="primary" (click)="openCreateStageModal()" class="btn-add-stage">
-            <span nz-icon nzType="plus-circle"></span>
-            <span>Thêm giai đoạn</span>
-          </button>
+        <button nz-button nzType="primary" (click)="openCreateStageModal()" class="btn-add-stage">
+          <span nz-icon nzType="plus-circle"></span>
+          <span>Thêm giai đoạn</span>
+        </button>
         }
         <button nz-button nzType="default" (click)="loadStages()" [nzLoading]="isLoading()">
           <span nz-icon nzType="reload"></span>
@@ -107,12 +145,9 @@
     <div class="stepper-container">
       <nz-steps [nzCurrent]="currentActiveStep()" nzDirection="horizontal" class="dental-steps">
         @for (stage of stages(); track stage.id) {
-          <nz-step
-            [nzTitle]="'Giai đoạn ' + stage.sequenceOrder"
-            [nzSubtitle]="stage.status"
-            [nzDescription]="stage.stageName"
-            [nzStatus]="stage.status === 'COMPLETED' ? 'finish' : stage.status === 'IN_PROGRESS' ? 'process' : 'wait'"
-          ></nz-step>
+        <nz-step [nzTitle]="'Giai đoạn ' + stage.sequenceOrder" [nzSubtitle]="stage.status"
+          [nzDescription]="stage.stageName"
+          [nzStatus]="stage.status === 'COMPLETED' ? 'finish' : stage.status === 'IN_PROGRESS' ? 'process' : 'wait'"></nz-step>
         }
       </nz-steps>
     </div>
@@ -122,130 +157,102 @@
   <div class="stages-timeline">
     <nz-timeline nzMode="left" class="dental-timeline">
       @for (stage of stages(); track stage.id) {
-        <nz-timeline-item
-          [nzColor]="stage.status === 'COMPLETED' ? 'green' : stage.status === 'IN_PROGRESS' ? '#0284c7' : 'gray'"
-        >
-          <div class="dental-card stage-card" [class.stage-card--active]="stage.status === 'IN_PROGRESS'">
-            <div class="stage-card__header">
-              <div class="stage-titles">
-                <div class="stage-seq">
-                  <span class="seq-num">Bước {{ stage.sequenceOrder }}</span>
-                  @switch (stage.status) {
-                    @case ('COMPLETED') {
-                      <span class="status-badge status-badge--completed">Đã hoàn thành</span>
-                    }
-                    @case ('IN_PROGRESS') {
-                      <span class="status-badge status-badge--in-progress">Đang tiến hành</span>
-                    }
-                    @case ('PENDING') {
-                      <span class="status-badge status-badge--pending">Chờ đến lịch</span>
-                    }
-                    @case ('CANCELLED') {
-                      <span class="status-badge status-badge--cancelled">Đã hủy bỏ</span>
-                    }
-                  }
-                </div>
-                <h4>{{ stage.stageName }}</h4>
+      <nz-timeline-item
+        [nzColor]="stage.status === 'COMPLETED' ? 'green' : stage.status === 'IN_PROGRESS' ? '#0284c7' : 'gray'">
+        <div class="dental-card stage-card" [class.stage-card--active]="stage.status === 'IN_PROGRESS'">
+          <div class="stage-card__header">
+            <div class="stage-titles">
+              <div class="stage-seq">
+                <span class="seq-num">Bước {{ stage.sequenceOrder }}</span>
+                @switch (stage.status) {
+                @case ('COMPLETED') {
+                <span class="status-badge status-badge--completed">Đã hoàn thành</span>
+                }
+                @case ('IN_PROGRESS') {
+                <span class="status-badge status-badge--in-progress">Đang tiến hành</span>
+                }
+                @case ('PENDING') {
+                <span class="status-badge status-badge--pending">Chờ đến lịch</span>
+                }
+                @case ('CANCELLED') {
+                <span class="status-badge status-badge--cancelled">Đã hủy bỏ</span>
+                }
+                }
               </div>
-
-              <!-- Action buttons for Doctor/Admin -->
-              @if (isDoctorOrAdmin()) {
-                <div class="stage-actions">
-                  @if (stage.status !== 'COMPLETED') {
-                    <button
-                      nz-button
-                      nzType="primary"
-                      nzSize="small"
-                      (click)="updateStatus(stage, 'COMPLETED')"
-                      class="btn-complete"
-                    >
-                      <span nz-icon nzType="check"></span>
-                      <span>Hoàn tất bước này</span>
-                    </button>
-                  }
-
-                  @if (stage.status === 'PENDING') {
-                    <button
-                      nz-button
-                      nzType="default"
-                      nzSize="small"
-                      (click)="updateStatus(stage, 'IN_PROGRESS')"
-                    >
-                      <span nz-icon nzType="play-circle"></span>
-                      <span>Bắt đầu</span>
-                    </button>
-                  }
-
-                  <button
-                    nz-button
-                    nzType="text"
-                    nzSize="small"
-                    (click)="openEditStageModal(stage)"
-                    nz-tooltip
-                    nzTooltipTitle="Chỉnh sửa chi phí & thời gian"
-                  >
-                    <span nz-icon nzType="edit"></span>
-                  </button>
-
-                  @if (userRole() === 'ADMIN') {
-                    <button
-                      nz-button
-                      nzType="text"
-                      nzDanger
-                      nzSize="small"
-                      nz-popconfirm
-                      nzPopconfirmTitle="Bạn có chắc chắn muốn xóa giai đoạn này?"
-                      (nzOnConfirm)="deleteStage(stage.id)"
-                      nz-tooltip
-                      nzTooltipTitle="Xóa giai đoạn"
-                    >
-                      <span nz-icon nzType="delete"></span>
-                    </button>
-                  }
-                </div>
-              }
+              <h4>{{ stage.stageName }}</h4>
             </div>
 
-            <!-- Stage Details Body -->
-            <div class="stage-details">
-              <div class="detail-row">
-                <span class="label"><span nz-icon nzType="calendar"></span> Thời gian hẹn dự kiến:</span>
-                <span class="val">{{ stage.appointmentDate || 'Chưa xếp lịch' }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="label"><span nz-icon nzType="dollar"></span> Chi phí giai đoạn:</span>
-                <span class="val text-success font-semibold">{{ stage.cost | number }} VNĐ</span>
-              </div>
-              <div class="detail-row">
-                <span class="label"><span nz-icon nzType="field-time"></span> Độ trễ / Chờ bình phục:</span>
-                <span class="val">{{ stage.delay }} ngày</span>
-              </div>
-              @if (stage.note) {
-                <div class="detail-row detail-row--note">
-                  <span class="label"><span nz-icon nzType="file-text"></span> Ghi chú chuyên môn:</span>
-                  <p class="val note-desc">{{ stage.note }}</p>
-                </div>
+            <!-- Action buttons for Doctor/Admin -->
+            @if (isDoctorOrAdmin()) {
+            <div class="stage-actions">
+              @if (stage.status !== 'COMPLETED') {
+              <button nz-button nzType="primary" nzSize="small" (click)="updateStatus(stage, 'COMPLETED')"
+                class="btn-complete">
+                <span nz-icon nzType="check"></span>
+                <span>Hoàn tất bước này</span>
+              </button>
+              }
+
+              @if (stage.status === 'PENDING') {
+              <button nz-button nzType="default" nzSize="small" (click)="updateStatus(stage, 'IN_PROGRESS')">
+                <span nz-icon nzType="play-circle"></span>
+                <span>Bắt đầu</span>
+              </button>
+              }
+
+              <button nz-button nzType="text" nzSize="small" (click)="openEditStageModal(stage)" nz-tooltip
+                nzTooltipTitle="Chỉnh sửa chi phí & thời gian">
+                <span nz-icon nzType="edit"></span>
+              </button>
+
+              @if (userRole() === 'ADMIN') {
+              <button nz-button nzType="text" nzDanger nzSize="small" nz-popconfirm
+                nzPopconfirmTitle="Bạn có chắc chắn muốn xóa giai đoạn này?" (nzOnConfirm)="deleteStage(stage.id)"
+                nz-tooltip nzTooltipTitle="Xóa giai đoạn">
+                <span nz-icon nzType="delete"></span>
+              </button>
               }
             </div>
+            }
           </div>
-        </nz-timeline-item>
+
+          <!-- Stage Details Body -->
+          <div class="stage-details">
+            <div class="detail-row">
+              <span class="label"><span nz-icon nzType="calendar"></span> Thời gian hẹn dự kiến:</span>
+              <span class="val">{{ stage.appointmentDate || 'Chưa xếp lịch' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label"><span nz-icon nzType="dollar"></span> Chi phí giai đoạn:</span>
+              <span class="val text-success font-semibold">{{ stage.cost | number }} VNĐ</span>
+            </div>
+            <div class="detail-row">
+              <span class="label"><span nz-icon nzType="field-time"></span> Độ trễ / Chờ bình phục:</span>
+              <span class="val">{{ stage.delay }} ngày</span>
+            </div>
+            @if (stage.note) {
+            <div class="detail-row detail-row--note">
+              <span class="label"><span nz-icon nzType="file-text"></span> Ghi chú chuyên môn:</span>
+              <p class="val note-desc">{{ stage.note }}</p>
+            </div>
+            }
+          </div>
+        </div>
+      </nz-timeline-item>
       }
     </nz-timeline>
   </div>
+  }
 </div>
 
 <!-- ======================================================================== -->
 <!-- MODAL: ADD / EDIT STAGE                                                  -->
 <!-- ======================================================================== -->
-<nz-modal
-  [nzVisible]="isCreateStageModalVisible() || isEditStageModalVisible()"
+<nz-modal [nzVisible]="isCreateStageModalVisible() || isEditStageModalVisible()"
   [nzTitle]="isCreateStageModalVisible() ? 'Thêm Giai Đoạn Điều Trị Mới' : 'Cập Nhật Giai Đoạn Điều Trị'"
   (nzOnCancel)="isCreateStageModalVisible.set(false); isEditStageModalVisible.set(false)"
-  (nzOnOk)="isCreateStageModalVisible() ? submitCreateStage() : submitEditStage()"
-  nzOkText="Lưu thông tin"
-  nzCancelText="Đóng"
-  [nzWidth]="620"
->
+  (nzOnOk)="isCreateStageModalVisible() ? submitCreateStage() : submitEditStage()" nzOkText="Lưu thông tin"
+  nzCancelText="Đóng" [nzWidth]="620">
   <ng-container *nzModalContent>
     <form [formGroup]="stageForm" nz-form nzLayout="vertical">
       <nz-form-item>
@@ -266,12 +273,7 @@
         <nz-form-item>
           <nz-form-label nzRequired>Chi phí (VNĐ)</nz-form-label>
           <nz-form-control>
-            <nz-input-number
-              formControlName="cost"
-              [nzMin]="0"
-              [nzStep]="500000"
-              class="w-full"
-            ></nz-input-number>
+            <nz-input-number formControlName="cost" [nzMin]="0" [nzStep]="500000" class="w-full"></nz-input-number>
           </nz-form-control>
         </nz-form-item>
 
@@ -286,24 +288,16 @@
       <nz-form-item>
         <nz-form-label>Ngày giờ thực hiện dự kiến</nz-form-label>
         <nz-form-control>
-          <nz-date-picker
-            formControlName="appointmentDate"
-            nzShowTime
-            nzFormat="yyyy-MM-dd HH:mm:ss"
-            class="w-full"
-          ></nz-date-picker>
+          <nz-date-picker formControlName="appointmentDate" nzShowTime nzFormat="yyyy-MM-dd HH:mm:ss"
+            class="w-full"></nz-date-picker>
         </nz-form-control>
       </nz-form-item>
 
       <nz-form-item>
         <nz-form-label>Chỉ định và ghi chú lâm sàng</nz-form-label>
         <nz-form-control>
-          <textarea
-            nz-input
-            formControlName="note"
-            rows="3"
-            placeholder="Chỉ định loại vật liệu, kháng sinh hoặc hướng dẫn hậu phẫu..."
-          ></textarea>
+          <textarea nz-input formControlName="note" rows="3"
+            placeholder="Chỉ định loại vật liệu, kháng sinh hoặc hướng dẫn hậu phẫu..."></textarea>
         </nz-form-control>
       </nz-form-item>
     </form>
@@ -313,41 +307,25 @@
 <!-- ======================================================================== -->
 <!-- MODAL: CREATE TREATMENT ROUTE                                           -->
 <!-- ======================================================================== -->
-<nz-modal
-  [nzVisible]="isCreateRouteModalVisible()"
-  nzTitle="Khởi Tạo Lộ Trình / Phác Đồ Điều Trị Mới"
-  (nzOnCancel)="isCreateRouteModalVisible.set(false)"
-  (nzOnOk)="submitCreateRoute()"
-  nzOkText="Tạo lộ trình"
-  nzCancelText="Hủy"
-  [nzWidth]="560"
->
+<nz-modal [nzVisible]="isCreateRouteModalVisible()" nzTitle="Khởi Tạo Lộ Trình / Phác Đồ Điều Trị Mới"
+  (nzOnCancel)="isCreateRouteModalVisible.set(false)" (nzOnOk)="submitCreateRoute()" nzOkText="Tạo lộ trình"
+  nzCancelText="Hủy" [nzWidth]="560">
   <ng-container *nzModalContent>
     <form [formGroup]="routeForm" nz-form nzLayout="vertical">
       <nz-form-item>
         <nz-form-label nzRequired>Tên lộ trình / Phác đồ</nz-form-label>
         <nz-form-control nzErrorTip="Vui lòng nhập tên lộ trình điều trị!">
-          <input
-            nz-input
-            formControlName="title"
-            placeholder="Ví dụ: Phác đồ Chỉnh nha Mắc cài sứ tự buộc..."
-          />
+          <input nz-input formControlName="title" placeholder="Ví dụ: Phác đồ Chỉnh nha Mắc cài sứ tự buộc..." />
         </nz-form-control>
       </nz-form-item>
 
       <nz-form-item>
         <nz-form-label>Mô tả chi tiết phác đồ</nz-form-label>
         <nz-form-control>
-          <textarea
-            nz-input
-            formControlName="description"
-            rows="4"
-            placeholder="Mô tả chỉ định lâm sàng, mục tiêu điều trị, đối tượng chỉ định..."
-          ></textarea>
+          <textarea nz-input formControlName="description" rows="4"
+            placeholder="Mô tả chỉ định lâm sàng, mục tiêu điều trị, đối tượng chỉ định..."></textarea>
         </nz-form-control>
       </nz-form-item>
     </form>
   </ng-container>
 </nz-modal>
-
-

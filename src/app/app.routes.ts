@@ -59,6 +59,13 @@ export const routes: Routes = [
           import('./features/treatments/treatment-route-detail.component').then(m => m.TreatmentRouteDetailComponent)
       },
       {
+        path: 'patient/treatment-routes/:id',
+        canActivate: [roleGuard],
+        data: { roles: ['PATIENT', 'ADMIN'] },
+        loadComponent: () =>
+          import('./features/treatments/treatment-route-detail.component').then(m => m.TreatmentRouteDetailComponent)
+      },
+      {
         path: 'patient/medical-records',
         canActivate: [roleGuard],
         data: { roles: ['PATIENT', 'ADMIN'] },
